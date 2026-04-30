@@ -1,6 +1,6 @@
-public class LoginResponseDTO
+public record LoginResponseDTO
 {
-    public string Token { get; set; }
-    public string UserId { get; set; }
-    public string Username { get; set; }
+    public required string Token { get; set; }
+    public required string UserId { get; set; }
+    public required string Username { get; set; }
 }

@@ -15,6 +15,7 @@ public class AuthService
 
     private readonly IValidator<RegisterDTO> _registerValidator;
     private readonly IValidator<LoginDTO> _loginValidator;
+    private readonly IValidator<UpdateUserDTO> _updateUserValidator;
 
     private readonly IConfiguration _configuration;
 
@@ -22,12 +23,14 @@ public class AuthService
         UserManager<User> userManager,
         IValidator<RegisterDTO> registerValidator,
         IValidator<LoginDTO> loginValidator,
+        IValidator<UpdateUserDTO> updateUserValidator,
         IConfiguration configuration
     )
     {
         _userManager = userManager;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
+        _updateUserValidator = updateUserValidator;
         _configuration = configuration;
     }
 
@@ -137,6 +140,78 @@ public class AuthService
         }
     }
 
+
+
+    public async Task<ApiResponseDto<User>> UpdateUserAsyncById(string userId, UpdateUserDTO updateUserDto)
+    {
+        if (string.IsNullOrWhiteSpace(updateUserDto.Username)
+            && string.IsNullOrWhiteSpace(updateUserDto.Password))
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "No data to update.",
+                new List<string> { "Provide at least one field to update." }
+            );
+        }
+
+        ValidationResult validationResult = _updateUserValidator.Validate(updateUserDto);
+
+        if (!validationResult.IsValid)
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "Invalid user data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+        }
+
+        User? user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "User update failed.",
+                new List<string> { "User not found." }
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
+        {
+            user.UserName = updateUserDto.Username;
+            user.Name = updateUserDto.Username;
+
+            IdentityResult result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                return ApiResponseDto<User>.ErrorResult(
+                    "User update failed.",
+                    result.Errors.Select(e => e.Description).ToList()
+                );
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
+        {
+            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            IdentityResult passwordResult = await _userManager.ResetPasswordAsync(
+                user,
+                resetToken,
+                updateUserDto.Password
+            );
+
+            if (!passwordResult.Succeeded)
+            {
+                return ApiResponseDto<User>.ErrorResult(
+                    "Password update failed.",
+                    passwordResult.Errors.Select(e => e.Description).ToList()
+                );
+            }
+        }
+
+        return ApiResponseDto<User>.SuccessResult(user, "User updated successfully.");
+    }
+
+
+
     private string GenerateJwtToken(User user)
     {
         var jwtKey = _configuration["Jwt:Key"];
@@ -164,4 +239,5 @@ public class AuthService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }

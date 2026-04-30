@@ -1,0 +1,99 @@
+using FluentValidation;
+using FluentValidation.Results;
+using Implemented_MVC.DTOs;
+using Microsoft.AspNetCore.Identity;
+
+public class UserService
+{
+    private readonly UserManager<User> _userManager;
+    private readonly IValidator<UpdateUserDTO> _updateUserValidator;
+
+    public UserService(UserManager<User> userManager, IValidator<UpdateUserDTO> updateUserValidator)
+    {
+        _userManager = userManager;
+        _updateUserValidator = updateUserValidator;
+    }
+
+    public async Task<ApiResponseDto<User>> GetCurrentUserAsync(string userId)
+    {
+        User? user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
+        {
+            return ApiResponseDto<User>.ErrorResult("User not found.");
+        }
+
+        return ApiResponseDto<User>.SuccessResult(user);
+    }
+
+    public async Task<ApiResponseDto<User>> UpdateCurrentUserAsync(
+        string userId,
+        UpdateUserDTO updateUserDto
+    )
+    {
+        if (string.IsNullOrWhiteSpace(updateUserDto.Username)
+            && string.IsNullOrWhiteSpace(updateUserDto.Password))
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "No data to update.",
+                new List<string> { "Provide at least one field to update." }
+            );
+        }
+
+        ValidationResult validationResult = _updateUserValidator.Validate(updateUserDto);
+
+        if (!validationResult.IsValid)
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "Invalid user data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+        }
+
+        User? user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "User update failed.",
+                new List<string> { "User not found." }
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
+        {
+            user.UserName = updateUserDto.Username;
+            user.Name = updateUserDto.Username;
+
+            IdentityResult updateResult = await _userManager.UpdateAsync(user);
+
+            if (!updateResult.Succeeded)
+            {
+                return ApiResponseDto<User>.ErrorResult(
+                    "User update failed.",
+                    updateResult.Errors.Select(e => e.Description).ToList()
+                );
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
+        {
+            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            IdentityResult passwordResult = await _userManager.ResetPasswordAsync(
+                user,
+                resetToken,
+                updateUserDto.Password
+            );
+
+            if (!passwordResult.Succeeded)
+            {
+                return ApiResponseDto<User>.ErrorResult(
+                    "Password update failed.",
+                    passwordResult.Errors.Select(e => e.Description).ToList()
+                );
+            }
+        }
+
+        return ApiResponseDto<User>.SuccessResult(user, "User updated successfully.");
+    }
+}

@@ -27,10 +27,10 @@ builder
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var jwtSettings = builder.Configuration.GetSection("Jwt");
 
 var key = Encoding.ASCII.GetBytes(
-    jwtSettings["Secret"] ?? "your-super-secret-key-that-is-at-least-256-bits-long"
+    jwtSettings["Key"] ?? "your-super-secret-key-that-is-at-least-256-bits-long"
 );
 
 builder
@@ -54,15 +54,22 @@ builder
         };
     });
 
+
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IValidator<RegisterDTO>, RegisterDTOValidator>();
 builder.Services.AddScoped<IValidator<LoginDTO>, LoginDTOValidator>();
-builder.Services.AddScoped<IValidator<ProductDTO>, ProductDTOValidator>();
+builder.Services.AddScoped<IValidator<ProductCreateDTO>, ProductDTOValidator>();
+builder.Services.AddScoped<IValidator<UpdateProductDTO>, ProductUpdateValidator>();
 builder.Services.AddScoped<IValidator<StoreDTO>, StoreDTOValidator>();
+builder.Services.AddScoped<IValidator<UpdateUserDTO>, UpdateUserDTOValidator>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<StoreService>();
+builder.Services.AddScoped<UserService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

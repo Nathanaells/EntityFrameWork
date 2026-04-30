@@ -1,0 +1,6 @@
+public record ProductCreateDTO
+{
+    public required string Name { get; init; }
+    public required decimal Price { get; init; }
+    public required int StoreId { get; init; }
+}

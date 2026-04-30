@@ -70,10 +70,9 @@ builder.Services.AddSwaggerGen(c =>
         "v1",
         new OpenApiInfo
         {
-            Title = "Todo List API",
+            Title = "Rest API",
             Version = "v1",
-            Description =
-                "A comprehensive Todo List Management API with authentication and CRUD operations",
+            Description = "A comprehensive Rest API with authentication and CRUD operations",
         }
     );
 

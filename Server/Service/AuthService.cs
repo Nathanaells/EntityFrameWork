@@ -97,7 +97,7 @@ public class AuthService
                 );
             }
 
-            User user = await _userManager.FindByNameAsync(loginDto.Username);
+            User? user = await _userManager.FindByNameAsync(loginDto.Username);
 
             if (user == null)
             {

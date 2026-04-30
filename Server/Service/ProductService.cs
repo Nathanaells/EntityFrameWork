@@ -1,108 +1,108 @@
-// using FluentValidation;
-// using FluentValidation.Results;
-// using Implemented_MVC.DTOs;
+using FluentValidation;
+using FluentValidation.Results;
+using Implemented_MVC.DTOs;
+using Microsoft.EntityFrameworkCore;
 
-// public class ProductService
-// {
-//     private readonly IValidator<ProductDTO> _productValidator;
+public class ProductService
+{
+    private readonly IValidator<ProductDTO> _productValidator;
 
-//     public ProductService(IValidator<ProductDTO> productValidator)
-//     {
-//         _productValidator = productValidator;
-//     }
+    private readonly AppDbContext _context;
 
-//     public async Task<ApiResponseDto<ProductDTO>> CreateProduct(ProductDTO productDto)
-//     {
-//         ValidationResult validationResult = _productValidator.Validate(productDto);
+    public ProductService(IValidator<ProductDTO> productValidator)
+    {
+        _productValidator = productValidator;
+    }
 
-//         if (!validationResult.IsValid)
-//         {
-//             return ApiResponseDto<ProductDTO>.ErrorResult(
-//                 "Invalid product data.",
-//                 validationResult.Errors.Select(e => e.ErrorMessage).ToList()
-//             );
-//         }
+    public async Task<ApiResponseDto<Product>> CreateProduct(ProductDTO productDto)
+    {
+        ValidationResult validationResult = _productValidator.Validate(productDto);
 
-//         // Here you would typically save the product to the database
-//         // For this example, we'll just return the validated product
+        if (!validationResult.IsValid)
+        {
+            return ApiResponseDto<Product>.ErrorResult(
+                "Invalid product data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+        }
 
-//         return ApiResponseDto<ProductDTO>.SuccessResult(productDto);
-//     }
+        Product newProduct = new Product
+        {
+            Name = productDto.Name,
+            Price = productDto.Price,
+            StoreId = productDto.StoreId,
+        };
 
-//     public async Task<ApiResponseDto<ProductDTO>> GetProductById(int id)
-//     {
-//         // Here you would typically retrieve the product from the database
-//         // For this example, we'll just return a dummy product
+        await _context.Products.AddAsync(newProduct);
 
-//         ProductDTO product = new ProductDTO
-//         {
-//             Id = id,
-//             Name = "Sample Product",
-//             Price = 9.99m,
-//             StoreId = 1,
-//         };
+        await _context.SaveChangesAsync();
 
-//         return ApiResponseDto<ProductDTO>.SuccessResult(product);
-//     }
+        return ApiResponseDto<Product>.SuccessResult(newProduct);
+    }
 
-//     public async Task<ApiResponseDto<List<ProductDTO>>> GetProductsByStoreId(int storeId)
-//     {
-//         // Here you would typically retrieve the products from the database
-//         // For this example, we'll just return a list of dummy products
+    public async Task<ApiResponseDto<Product>> GetProductById(int id)
+    {
+        Product? product = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
 
-//         List<ProductDTO> products = new List<ProductDTO>
-//         {
-//             new ProductDTO
-//             {
-//                 Id = 1,
-//                 Name = "Product 1",
-//                 Price = 9.99m,
-//                 StoreId = storeId,
-//             },
-//             new ProductDTO
-//             {
-//                 Id = 2,
-//                 Name = "Product 2",
-//                 Price = 19.99m,
-//                 StoreId = storeId,
-//             },
-//             new ProductDTO
-//             {
-//                 Id = 3,
-//                 Name = "Product 3",
-//                 Price = 29.99m,
-//                 StoreId = storeId,
-//             },
-//         };
+        if (product == null)
+        {
+            return ApiResponseDto<Product>.ErrorResult("Product not found.");
+        }
 
-//         return ApiResponseDto<List<ProductDTO>>.SuccessResult(products);
-//     }
+        return ApiResponseDto<Product>.SuccessResult(product);
+    }
 
-//     public async Task<ApiResponseDto<ProductDTO>> UpdateProduct(int id, ProductDTO productDto)
-//     {
-//         ValidationResult validationResult = _productValidator.Validate(productDto);
+    public async Task<ApiResponseDto<List<Product>>> GetProductsByStoreId(int storeId)
+    {
+        // Store? product = await _context.Stores.FindAsync(storeId).Include(s => s.Products).FirstOrDefaultAsync();
+        List<Product> products = await _context
+            .Products.Where(p => p.StoreId == storeId)
+            .ToListAsync();
 
-//         if (!validationResult.IsValid)
-//         {
-//             return ApiResponseDto<ProductDTO>.ErrorResult(
-//                 "Invalid product data.",
-//                 validationResult.Errors.Select(e => e.ErrorMessage).ToList()
-//             );
-//         }
+        return ApiResponseDto<List<Product>>.SuccessResult(products);
+    }
 
-//         // Here you would typically update the product in the database
-//         // For this example, we'll just return the updated product
+    public async Task<ApiResponseDto<Product>> UpdateProduct(int id, ProductDTO productDto)
+    {
+        ValidationResult validationResult = _productValidator.Validate(productDto);
 
-//         productDto.Id = id; // Ensure the ID is set to the provided ID
+        if (!validationResult.IsValid)
+        {
+            return ApiResponseDto<Product>.ErrorResult(
+                "Invalid product data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+        }
 
-//         return ApiResponseDto<ProductDTO>.SuccessResult(productDto);
-//     }
+        Product? existingProduct = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
 
-//     public async Task<ApiResponseDto<Product>> DeleteProduct(int id)
-//     {
-//         // Here you would typically delete the product from the database
-//         // For this example, we'll just return true to indicate success
+        if (existingProduct == null)
+        {
+            return ApiResponseDto<Product>.ErrorResult("Product not found.");
+        }
 
-//         return ApiResponseDto<bool>.SuccessResult(true);
-//     }
-// }
+        existingProduct.Name = productDto.Name;
+        existingProduct.Price = productDto.Price;
+        existingProduct.StoreId = productDto.StoreId;
+
+        await _context.SaveChangesAsync();
+
+        return ApiResponseDto<Product>.SuccessResult(existingProduct);
+    }
+
+    public async Task<ApiResponseDto<bool>> DeleteProduct(int id)
+    {
+        Product? deletedProduct = await _context
+            .Products.Where(p => p.Id == id)
+            .FirstOrDefaultAsync();
+
+        if (deletedProduct == null)
+        {
+            return ApiResponseDto<bool>.ErrorResult("Product not found.");
+        }
+        _context.Products.Remove(deletedProduct);
+
+        await _context.SaveChangesAsync();
+        return ApiResponseDto<bool>.SuccessResult(true);
+    }
+}

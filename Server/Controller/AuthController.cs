@@ -29,7 +29,7 @@ public class AuthController : ControllerBase
                 return BadRequest(result.Errors);
             }
 
-            return Ok(result.Data);
+            return StatusCode(201, result.Data);
         }
         catch (Exception ex)
         {

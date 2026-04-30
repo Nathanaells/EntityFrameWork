@@ -66,6 +66,7 @@ builder.Services.AddScoped<IValidator<ProductCreateDTO>, ProductDTOValidator>();
 builder.Services.AddScoped<IValidator<UpdateProductDTO>, ProductUpdateValidator>();
 builder.Services.AddScoped<IValidator<StoreDTO>, StoreDTOValidator>();
 builder.Services.AddScoped<IValidator<UpdateUserDTO>, UpdateUserDTOValidator>();
+builder.Services.AddScoped<IValidator<UpdateProductDTO>, ProductUpdateValidator>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<StoreService>();

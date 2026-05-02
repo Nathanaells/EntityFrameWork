@@ -3,13 +3,13 @@ import { useEffect } from "react";
 
 export default function BaseLayout() {
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
     }
-  }, [navigate]);
+  }, [token]);
 
   return (
     <>

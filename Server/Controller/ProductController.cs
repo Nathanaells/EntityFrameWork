@@ -135,5 +135,31 @@ public class ProductController : ControllerBase
         }
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProduct(int id)
+    {
+        try
+        {
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return StatusCode(401, new { message = "Unauthorized" });
+            }
+
+            ApiResponseDto<bool> response = await _productService.DeleteProduct(id, userId);
+
+            if (!response.Success)
+            {
+                return NotFound(response.Errors);
+            }
+
+            return Ok(new { message = "Product deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while deleting the product.", error = ex.Message });
+        }
+    }
 
 }

@@ -2,23 +2,27 @@ using FluentValidation;
 using FluentValidation.Results;
 using Implemented_MVC.DTOs;
 using Microsoft.EntityFrameworkCore;
-
+using AutoMapper;
 public class ProductService
 {
     private readonly IValidator<ProductCreateDTO> _productValidator;
     private readonly IValidator<UpdateProductDTO> _productUpdateValidator;
+
+    private readonly IMapper _mapper;
 
     private readonly AppDbContext _context;
 
     public ProductService(
         IValidator<ProductCreateDTO> productValidator,
         IValidator<UpdateProductDTO> productUpdateValidator,
-        AppDbContext context
+        AppDbContext context,
+        IMapper mapper
     )
     {
         _productValidator = productValidator;
         _productUpdateValidator = productUpdateValidator;
         _context = context;
+        _mapper = mapper;
     }
 
     public async Task<ApiResponseDto<ProductResponseDTO>> CreateProduct(ProductCreateDTO productDto, string userId)
@@ -45,18 +49,13 @@ public class ProductService
             return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
         }
 
-        Product newProduct = new Product
-        {
-            Name = productDto.Name,
-            Price = productDto.Price,
-            StoreId = productDto.StoreId,
-        };
+        Product newProduct = _mapper.Map<Product>(productDto);
 
+        ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(newProduct);
         await _context.Products.AddAsync(newProduct);
-
         await _context.SaveChangesAsync();
 
-        return ApiResponseDto<ProductResponseDTO>.SuccessResult(MapProductResponse(newProduct));
+        return ApiResponseDto<ProductResponseDTO>.SuccessResult(response, "Product created successfully.");
     }
 
     public async Task<ApiResponseDto<ProductResponseDTO>> GetProductById(int id, string userId)
@@ -75,7 +74,10 @@ public class ProductService
             return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
         }
 
-        return ApiResponseDto<ProductResponseDTO>.SuccessResult(MapProductResponse(product));
+        ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(product);
+
+
+        return ApiResponseDto<ProductResponseDTO>.SuccessResult(response, "Success retrieving product.");
     }
 
     public async Task<ApiResponseDto<List<ProductResponseDTO>>> GetProductsByStoreId(int storeId, string userId)
@@ -92,13 +94,8 @@ public class ProductService
             return ApiResponseDto<List<ProductResponseDTO>>.ErrorResult("Access denied.");
         }
 
-        List<Product> products = await _context
-            .Products.Where(p => p.StoreId == storeId)
-            .ToListAsync();
-
-        List<ProductResponseDTO> productResponses = products
-            .Select(MapProductResponse)
-            .ToList();
+        List<Product> products = await _context.Products.Where(p => p.StoreId == storeId).ToListAsync();
+        List<ProductResponseDTO> productResponses = _mapper.Map<List<ProductResponseDTO>>(products).ToList();
 
         return ApiResponseDto<List<ProductResponseDTO>>.SuccessResult(productResponses);
     }
@@ -119,14 +116,6 @@ public class ProductService
             );
         }
 
-        if (string.IsNullOrWhiteSpace(productDto.Name) && productDto.Price == null)
-        {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
-                "No data to update.",
-                new List<string> { "Provide at least one field to update." }
-            );
-        }
-
         Product? existingProduct = await _context
             .Products.Include(p => p.Store)
             .FirstOrDefaultAsync(i => i.Id == id);
@@ -141,21 +130,13 @@ public class ProductService
             return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
         }
 
-        if (!string.IsNullOrWhiteSpace(productDto.Name))
-        {
-            existingProduct.Name = productDto.Name;
-        }
 
-        if (productDto.Price.HasValue)
-        {
-            existingProduct.Price = productDto.Price.Value;
-        }
-
+        _mapper.Map(productDto, existingProduct);
         await _context.SaveChangesAsync();
 
-        return ApiResponseDto<ProductResponseDTO>.SuccessResult(
-            MapProductResponse(existingProduct)
-        );
+        ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(existingProduct);
+
+        return ApiResponseDto<ProductResponseDTO>.SuccessResult(response, "Product updated successfully.");
     }
 
     public async Task<ApiResponseDto<bool>> DeleteProduct(int id, string userId)
@@ -179,14 +160,5 @@ public class ProductService
         return ApiResponseDto<bool>.SuccessResult(true);
     }
 
-    private static ProductResponseDTO MapProductResponse(Product product)
-    {
-        return new ProductResponseDTO
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Price = product.Price,
-            StoreId = product.StoreId,
-        };
-    }
+
 }

@@ -2,21 +2,25 @@ using FluentValidation;
 using FluentValidation.Results;
 using Implemented_MVC.DTOs;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 public class StoreService
 {
     private readonly AppDbContext _context;
     private readonly IValidator<StoreDTO> _storeValidator;
 
-    public StoreService(AppDbContext context, IValidator<StoreDTO> storeValidator)
+    private readonly IMapper _mapper;
+
+    public StoreService(AppDbContext context, IValidator<StoreDTO> storeValidator, IMapper mapper)
     {
         _context = context;
         _storeValidator = storeValidator;
+        _mapper = mapper;
     }
 
     public async Task<ApiResponseDto<StoreResponseDTO>> CreateStore(StoreDTO storeDto, string userId)
     {
-        ValidationResult validationResult = _storeValidator.Validate(storeDto);
+        ValidationResult validationResult = await _storeValidator.ValidateAsync(storeDto);
 
         if (!validationResult.IsValid)
         {
@@ -27,19 +31,17 @@ public class StoreService
         }
 
 
-        Store newStore = new Store
-        {
-            Name = storeDto.Name,
-            Location = storeDto.Location,
-            UserId = userId,
-
-        };
+        // Map StoreDTO to Store entity
+        Store newStore = _mapper.Map<Store>(storeDto);
+        newStore.UserId = userId;
 
         await _context.Stores.AddAsync(newStore);
 
+        StoreResponseDTO response = _mapper.Map<StoreResponseDTO>(newStore);
+
         await _context.SaveChangesAsync();
 
-        return ApiResponseDto<StoreResponseDTO>.SuccessResult(MapStoreResponse(newStore));
+        return ApiResponseDto<StoreResponseDTO>.SuccessResult(response, "Store created successfully.");
     }
 
     public async Task<ApiResponseDto<StoreResponseDTO>> GetStoreById(int id, string userId)
@@ -56,7 +58,9 @@ public class StoreService
             return ApiResponseDto<StoreResponseDTO>.ErrorResult("Access denied.");
         }
 
-        return ApiResponseDto<StoreResponseDTO>.SuccessResult(MapStoreResponse(store));
+        StoreResponseDTO response = _mapper.Map<StoreResponseDTO>(store);
+
+        return ApiResponseDto<StoreResponseDTO>.SuccessResult(response, $"Store Owned by user : {userId}.");
     }
 
     public async Task<ApiResponseDto<List<StoreResponseDTO>>> GetStoresByUserId(string userId)
@@ -70,7 +74,8 @@ public class StoreService
             );
         }
 
-        List<StoreResponseDTO> response = stores.Select(MapStoreResponse).ToList();
+
+        List<StoreResponseDTO> response = _mapper.Map<List<StoreResponseDTO>>(stores).ToList();
 
         return ApiResponseDto<List<StoreResponseDTO>>.SuccessResult(response);
     }
@@ -95,13 +100,5 @@ public class StoreService
         return ApiResponseDto<bool>.SuccessResult(true);
     }
 
-    private static StoreResponseDTO MapStoreResponse(Store store)
-    {
-        return new StoreResponseDTO
-        {
-            Id = store.Id,
-            Name = store.Name,
-            Location = store.Location,
-        };
-    }
+
 }

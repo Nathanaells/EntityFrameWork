@@ -60,39 +60,10 @@ public class UserService
             );
         }
 
-        if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
-        {
-            user.UserName = updateUserDto.Username;
-            user.Name = updateUserDto.Username;
 
-            IdentityResult updateResult = await _userManager.UpdateAsync(user);
+        user.DisplayName = updateUserDto.Username;
+        user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, updateUserDto.Password);
 
-            if (!updateResult.Succeeded)
-            {
-                return ApiResponseDto<User>.ErrorResult(
-                    "User update failed.",
-                    updateResult.Errors.Select(e => e.Description).ToList()
-                );
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
-        {
-            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-            IdentityResult passwordResult = await _userManager.ResetPasswordAsync(
-                user,
-                resetToken,
-                updateUserDto.Password
-            );
-
-            if (!passwordResult.Succeeded)
-            {
-                return ApiResponseDto<User>.ErrorResult(
-                    "Password update failed.",
-                    passwordResult.Errors.Select(e => e.Description).ToList()
-                );
-            }
-        }
 
         return ApiResponseDto<User>.SuccessResult(user, "User updated successfully.");
     }

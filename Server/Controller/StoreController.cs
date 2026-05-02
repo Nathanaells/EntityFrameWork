@@ -22,8 +22,6 @@ public class StoreController : ControllerBase
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            Console.WriteLine($"User ID from token: {userId}");
-
             if (string.IsNullOrWhiteSpace(userId))
             {
                 return StatusCode(401, new { message = "Unauthorized: User ID not found in token." });

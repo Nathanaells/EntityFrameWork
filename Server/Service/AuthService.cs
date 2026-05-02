@@ -8,6 +8,7 @@ using FluentValidation.Results;
 using Implemented_MVC.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using AutoMapper;
 
 public class AuthService
 {
@@ -17,6 +18,8 @@ public class AuthService
     private readonly IValidator<LoginDTO> _loginValidator;
     private readonly IValidator<UpdateUserDTO> _updateUserValidator;
 
+    private readonly IMapper _mapper;
+
     private readonly IConfiguration _configuration;
 
     public AuthService(
@@ -24,7 +27,8 @@ public class AuthService
         IValidator<RegisterDTO> registerValidator,
         IValidator<LoginDTO> loginValidator,
         IValidator<UpdateUserDTO> updateUserValidator,
-        IConfiguration configuration
+        IConfiguration configuration,
+        IMapper mapper
     )
     {
         _userManager = userManager;
@@ -32,12 +36,14 @@ public class AuthService
         _loginValidator = loginValidator;
         _updateUserValidator = updateUserValidator;
         _configuration = configuration;
+        _mapper = mapper;
     }
 
     public async Task<ApiResponseDto<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto)
     {
         try
         {
+
             ValidationResult validationResult = _registerValidator.Validate(registerDto);
 
             if (!validationResult.IsValid)
@@ -48,12 +54,7 @@ public class AuthService
                 );
             }
 
-            User user = new User
-            {
-                UserName = registerDto.Username,
-                Email = registerDto.Email,
-                Name = registerDto.Username,
-            };
+            User user = _mapper.Map<User>(registerDto);
 
             IdentityResult result = await _userManager.CreateAsync(user, registerDto.Password);
 
@@ -65,12 +66,7 @@ public class AuthService
                 );
             }
 
-            RegisterResponseDTO response = new RegisterResponseDTO
-            {
-                UserId = user.Id,
-                Username = user.UserName,
-                Email = user.Email,
-            };
+            RegisterResponseDTO response = _mapper.Map<RegisterResponseDTO>(user);
 
             return ApiResponseDto<RegisterResponseDTO>.SuccessResult(
                 response,
@@ -176,7 +172,7 @@ public class AuthService
         if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
         {
             user.UserName = updateUserDto.Username;
-            user.Name = updateUserDto.Username;
+            user.DisplayName = updateUserDto.Username;
 
             IdentityResult result = await _userManager.UpdateAsync(user);
 

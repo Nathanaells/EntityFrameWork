@@ -50,12 +50,12 @@ public class StoreService
 
         if (store == null)
         {
-            return ApiResponseDto<StoreResponseDTO>.ErrorResult("Store not found.");
+            return ApiResponseDto<StoreResponseDTO>.ErrorResult("Store not found.", new List<string> { "Store with the provided ID does not exist." });
         }
 
         if (store.UserId != userId)
         {
-            return ApiResponseDto<StoreResponseDTO>.ErrorResult("Access denied.");
+            return ApiResponseDto<StoreResponseDTO>.ErrorResult("Access denied.", new List<string> { "You are not the owner of this store." });
         }
 
         StoreResponseDTO response = _mapper.Map<StoreResponseDTO>(store);
@@ -70,7 +70,8 @@ public class StoreService
         if (stores.Count == 0)
         {
             return ApiResponseDto<List<StoreResponseDTO>>.ErrorResult(
-                "No stores found for this user."
+                "No stores found for this user.",
+                new List<string> { "No stores found for the provided user ID." }
             );
         }
 
@@ -86,12 +87,12 @@ public class StoreService
 
         if (store == null)
         {
-            return ApiResponseDto<bool>.ErrorResult("Store not found.");
+            return ApiResponseDto<bool>.ErrorResult("Store not found.", new List<string> { "Store with the provided ID does not exist." });
         }
 
         if (store.UserId != userId)
         {
-            return ApiResponseDto<bool>.ErrorResult("Access denied.");
+            return ApiResponseDto<bool>.ErrorResult("Access denied.", new List<string> { "You are not the owner of this store." });
         }
 
         _context.Stores.Remove(store);

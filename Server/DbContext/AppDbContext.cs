@@ -30,7 +30,7 @@ public class AppDbContext : IdentityDbContext<User>
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.Property(u => u.Name).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
 
             //Configure the relationship between User and Store with cascade delete
             entity

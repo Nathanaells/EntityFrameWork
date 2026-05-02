@@ -4,11 +4,11 @@ public class ProductMapper : Profile
 {
     public ProductMapper()
     {
-        CreateMap<Product, ProductCreateDTO>();
+        CreateMap<ProductCreateDTO, Product>();
 
-        CreateMap<ProductResponseDTO, Product>();
+        CreateMap<Product, ProductResponseDTO>();
 
-        CreateMap<Product, UpdateProductDTO>();
+        CreateMap<UpdateProductDTO, Product>();
 
 
     }

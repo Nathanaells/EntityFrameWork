@@ -18,148 +18,183 @@ public class ProductController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProduct([FromBody] ProductCreateDTO productDto)
     {
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        try
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
+        ApiResponseDto<ProductResponseDTO> response = await _productService.CreateProduct(
+            productDto,
+            userId
+        );
 
-            ApiResponseDto<ProductResponseDTO> response = await _productService.CreateProduct(
-                productDto,
-                userId
+        if (!response.Success)
+        {
+            return StatusCode(
+                400,
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
             );
+        }
 
-            if (!response.Success)
+        return Ok(
+            new
             {
-                return StatusCode(400, response.Errors);
+                status = true,
+                message = response.Message,
+                data = response.Data
             }
-
-            return Ok(response.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while creating the product.", error = ex.Message });
-        }
+        );
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProductById(int id)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
+        ApiResponseDto<ProductResponseDTO> response = await _productService.GetProductById(
+            id,
+            userId
+        );
 
-            ApiResponseDto<ProductResponseDTO> response = await _productService.GetProductById(
-                id,
-                userId
+        if (!response.Success)
+        {
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
             );
+        }
 
-            if (!response.Success)
+        return Ok(
+            new
             {
-                return NotFound(response.Errors);
+                status = true,
+                message = response.Message,
+                data = response.Data
             }
-
-            return Ok(response.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while retrieving the product.", error = ex.Message });
-        }
+        );
     }
 
     [HttpGet("store/{storeId}")]
     public async Task<IActionResult> GetProductsByStoreId(int storeId)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            ApiResponseDto<List<ProductResponseDTO>> response =
-                await _productService.GetProductsByStoreId(storeId, userId);
-
-            if (!response.Success)
-            {
-                return NotFound(response.Errors);
-            }
-
-            return Ok(response.Data);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
         }
-        catch (Exception ex)
+
+        ApiResponseDto<List<ProductResponseDTO>> response =
+            await _productService.GetProductsByStoreId(storeId, userId);
+
+        if (!response.Success)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving products for the store.", error = ex.Message });
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
         }
+
+        return Ok(
+            new
+            {
+                status = true,
+                message = response.Message,
+                data = response.Data
+            }
+        );
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO productDto)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
+        ApiResponseDto<ProductResponseDTO> response = await _productService.UpdateProduct(
+            id,
+            productDto,
+            userId
+        );
 
-            ApiResponseDto<ProductResponseDTO> response = await _productService.UpdateProduct(
-                id,
-                productDto,
-                userId
+        if (!response.Success)
+        {
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
             );
+        }
 
-            if (!response.Success)
+        return Ok(
+            new
             {
-                return NotFound(response.Errors);
+                status = true,
+                message = response.Message,
+                data = response.Data
             }
-
-            return Ok(response.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while updating the product.", error = ex.Message });
-        }
+        );
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return StatusCode(401, new { message = "Unauthorized" });
-            }
-
-            ApiResponseDto<bool> response = await _productService.DeleteProduct(id, userId);
-
-            if (!response.Success)
-            {
-                return NotFound(response.Errors);
-            }
-
-            return Ok(new { message = "Product deleted successfully." });
+            return StatusCode(403, new { status = false, message = "Forbidden", error = "Forbidden" });
         }
-        catch (Exception ex)
+
+        ApiResponseDto<bool> response = await _productService.DeleteProduct(id, userId);
+
+        if (!response.Success)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the product.", error = ex.Message });
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
         }
+
+        return Ok(
+            new
+            {
+                status = true,
+                message = "Product deleted successfully.",
+                data = response.Data
+            }
+        );
     }
 
 }

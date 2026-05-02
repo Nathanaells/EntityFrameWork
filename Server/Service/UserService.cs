@@ -20,7 +20,7 @@ public class UserService
 
         if (user == null)
         {
-            return ApiResponseDto<User>.ErrorResult("User not found.");
+            return ApiResponseDto<User>.ErrorResult("User not found.", new List<string> { "User with the provided ID does not exist." });
         }
 
         return ApiResponseDto<User>.SuccessResult(user);

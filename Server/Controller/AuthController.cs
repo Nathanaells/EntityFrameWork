@@ -18,42 +18,57 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO registerDto)
     {
-        try
+        ApiResponseDto<RegisterResponseDTO> result = await _authService.RegisterAsync(
+            registerDto
+        );
+
+        if (!result.Success)
         {
-            ApiResponseDto<RegisterResponseDTO> result = await _authService.RegisterAsync(
-                registerDto
+            return BadRequest(
+                new
+                {
+                    status = false,
+                    message = result.Message,
+                    error = result.Errors
+                }
             );
+        }
 
-            if (!result.Success)
+        return StatusCode(
+            201,
+            new
             {
-                return BadRequest(result.Errors);
+                status = true,
+                message = result.Message,
+                data = result.Data
             }
-
-            return StatusCode(201, result.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
+        );
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)
     {
-        try
-        {
-            ApiResponseDto<LoginResponseDTO> result = await _authService.LoginAsync(loginDto);
+        ApiResponseDto<LoginResponseDTO> result = await _authService.LoginAsync(loginDto);
 
-            if (!result.Success)
+        if (!result.Success)
+        {
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = result.Message,
+                    error = result.Errors
+                }
+            );
+        }
+
+        return Ok(
+            new
             {
-                return Unauthorized();
+                status = true,
+                message = result.Message,
+                data = result.Data
             }
-
-            return Ok(result.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
+        );
     }
 }

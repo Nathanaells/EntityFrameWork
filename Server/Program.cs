@@ -1,6 +1,7 @@
 using System.Text;
 using FluentValidation;
 using Implemented_MVC.Validators;
+using Implemented_MVC.ExeptionHandler;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -128,13 +129,14 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data S
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExeptionHandler>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

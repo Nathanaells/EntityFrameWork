@@ -41,19 +41,20 @@ public class ProductService
 
         if (store == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Store not found.");
+            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Store not found.", new List<string> { "Store with the provided ID does not exist." });
         }
 
         if (store.UserId != userId)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
+            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.", new List<string> { "You are not the owner of this store." });
         }
 
         Product newProduct = _mapper.Map<Product>(productDto);
 
-        ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(newProduct);
         await _context.Products.AddAsync(newProduct);
         await _context.SaveChangesAsync();
+
+        ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(newProduct);
 
         return ApiResponseDto<ProductResponseDTO>.SuccessResult(response, "Product created successfully.");
     }
@@ -66,12 +67,12 @@ public class ProductService
 
         if (product == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Product not found.");
+            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Product not found.", new List<string> { "Product with the provided ID does not exist." });
         }
 
         if (product.Store == null || product.Store.UserId != userId)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
+            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.", new List<string> { "You are not the owner of this product's store." });
         }
 
         ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(product);

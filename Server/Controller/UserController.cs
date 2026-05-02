@@ -22,17 +22,31 @@ public class UserController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized();
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
         }
 
         ApiResponseDto<User> response = await _userService.GetCurrentUserAsync(userId);
 
         if (!response.Success)
         {
-            return NotFound(response.Errors);
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
         }
 
-        return Ok(response.Data);
+        return Ok(
+            new
+            {
+                status = true,
+                message = response.Message,
+                data = response.Data
+            }
+        );
     }
 
     [HttpPut("me")]
@@ -42,7 +56,7 @@ public class UserController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized();
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
         }
 
         ApiResponseDto<User> response = await _userService.UpdateCurrentUserAsync(
@@ -52,9 +66,23 @@ public class UserController : ControllerBase
 
         if (!response.Success)
         {
-            return BadRequest(response.Errors);
+            return BadRequest(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
         }
 
-        return Ok(response.Data);
+        return Ok(
+            new
+            {
+                status = true,
+                message = response.Message,
+                data = response.Data
+            }
+        );
     }
 }

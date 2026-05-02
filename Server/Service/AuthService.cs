@@ -96,7 +96,7 @@ public class AuthService
                 );
             }
 
-            User? user = await _userManager.FindByNameAsync(loginDto.Username);
+            User? user = await _userManager.FindByEmailAsync(loginDto.Email);
 
             if (user == null)
             {
@@ -112,7 +112,7 @@ public class AuthService
             {
                 return ApiResponseDto<LoginResponseDTO>.ErrorResult(
                     "Login failed.",
-                    new List<string> { "Invalid username or password." }
+                    new List<string> { "Invalid email or password." }
                 );
             }
 

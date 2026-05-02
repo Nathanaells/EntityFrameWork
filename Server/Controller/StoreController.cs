@@ -18,118 +18,145 @@ public class StoreController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateStore([FromBody] StoreDTO storeDto)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return StatusCode(401, new { message = "Unauthorized: User ID not found in token." });
-            }
+        ApiResponseDto<StoreResponseDTO> response = await _storeService.CreateStore(
+            storeDto,
+            userId
+        );
 
-            ApiResponseDto<StoreResponseDTO> response = await _storeService.CreateStore(
-                storeDto,
-                userId
+        if (!response.Success)
+        {
+            return BadRequest(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
             );
+        }
 
-            if (!response.Success)
+        return StatusCode(
+            201,
+            new
             {
-                return BadRequest(new { message = response.Message });
+                status = true,
+                message = response.Message,
+                data = response.Data
             }
-
-            return StatusCode(201, response.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while creating the store.", error = ex.Message });
-        }
+        );
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetStoreById(int id)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
+        ApiResponseDto<StoreResponseDTO> response = await _storeService.GetStoreById(
+            id,
+            userId
+        );
 
-            ApiResponseDto<StoreResponseDTO> response = await _storeService.GetStoreById(
-                id,
-                userId
+        if (!response.Success)
+        {
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
             );
+        }
 
-            if (!response.Success)
+        return Ok(
+            new
             {
-                return NotFound(new { message = response.Message });
+                status = true,
+                message = response.Message,
+                data = response.Data
             }
-
-            return Ok(response.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while retrieving the store.", error = ex.Message });
-        }
+        );
     }
 
     [HttpGet("stores")]
     public async Task<IActionResult> GetAllStores()
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
 
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
+        ApiResponseDto<List<StoreResponseDTO>> response = await _storeService.GetStoresByUserId(
+            userId
+        );
 
-            ApiResponseDto<List<StoreResponseDTO>> response = await _storeService.GetStoresByUserId(
-                userId
+        if (!response.Success)
+        {
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
             );
+        }
 
-            if (!response.Success)
+        return Ok(
+            new
             {
-                return NotFound(new { message = response.Message });
+                status = true,
+                message = response.Message,
+                data = response.Data
             }
-
-            return Ok(response.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while retrieving the stores.", error = ex.Message });
-
-        }
-
+        );
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteStore(int id)
     {
-        try
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            ApiResponseDto<bool> response = await _storeService.DeleteStore(id, userId);
-
-            if (!response.Success)
-            {
-                return NotFound(new { message = response.Message });
-            }
-
-            return Ok(new { deleted = true });
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
         }
-        catch (Exception ex)
+
+        ApiResponseDto<bool> response = await _storeService.DeleteStore(id, userId);
+
+        if (!response.Success)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the store.", error = ex.Message });
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
         }
+
+        return Ok(
+            new
+            {
+                status = true,
+                message = "Store deleted successfully.",
+                data = response.Data
+            }
+        );
     }
 }

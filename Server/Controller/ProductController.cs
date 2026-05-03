@@ -90,40 +90,6 @@ public class ProductController : ControllerBase
         );
     }
 
-    [HttpGet("store/{storeId}")]
-    public async Task<IActionResult> GetProductsByStoreId(int storeId)
-    {
-        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
-        }
-
-        ApiResponseDto<List<ProductResponseDTO>> response =
-            await _productService.GetProductsByStoreId(storeId, userId);
-
-        if (!response.Success)
-        {
-            return NotFound(
-                new
-                {
-                    status = false,
-                    message = response.Message,
-                    error = response.Errors
-                }
-            );
-        }
-
-        return Ok(
-            new
-            {
-                status = true,
-                message = response.Message,
-                data = response.Data
-            }
-        );
-    }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO productDto)

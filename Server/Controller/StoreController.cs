@@ -9,6 +9,7 @@ using Implemented_MVC.DTOs;
 public class StoreController : ControllerBase
 {
     private readonly StoreService _storeService;
+    private
 
     public StoreController(StoreService storeService)
     {
@@ -90,6 +91,42 @@ public class StoreController : ControllerBase
         );
     }
 
+
+    [HttpGet("{StoreId}/products")]
+    public async Task<IActionResult> GetProductsByStoreId(int storeId)
+    {
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
+
+        ApiResponseDto<List<ProductResponseDTO>> response =
+            await _productService.GetProductsByStoreId(storeId, userId);
+
+        if (!response.Success)
+        {
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
+        }
+
+        return Ok(
+            new
+            {
+                status = true,
+                message = response.Message,
+                data = response.Data
+            }
+        );
+    }
+
     [HttpGet("stores")]
     public async Task<IActionResult> GetAllStores()
     {
@@ -125,6 +162,8 @@ public class StoreController : ControllerBase
             }
         );
     }
+
+
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteStore(int id)

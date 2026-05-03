@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Implemented_MVC.DTOs;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/store/{storeId}/[controller]")]
 [Authorize]
 public class ProductController : ControllerBase
 {
@@ -89,6 +89,7 @@ public class ProductController : ControllerBase
             }
         );
     }
+
 
 
     [HttpPut("{id}")]

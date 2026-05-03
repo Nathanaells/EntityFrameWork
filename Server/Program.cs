@@ -78,6 +78,12 @@ builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<StoreService>();
 builder.Services.AddScoped<UserService>();
 
+
+builder.Services.AddRouting(options =>
+{
+    options.LowercaseUrls = true;
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc(

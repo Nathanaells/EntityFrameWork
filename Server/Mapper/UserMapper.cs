@@ -17,5 +17,10 @@ public class UserMapper : Profile
         .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
         .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.DisplayName))
         .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+
+        CreateMap<User, UserResponseDTO>()
+        .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+        .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.DisplayName))
+        .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
     }
 }

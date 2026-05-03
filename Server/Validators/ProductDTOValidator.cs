@@ -13,6 +13,6 @@ public class ProductDTOValidator : AbstractValidator<ProductCreateDTO>
             .WithMessage("Product name must be at least 3 characters long.");
 
         RuleFor(x => x.Price).GreaterThan(0).WithMessage("Price must be greater than zero.");
-        RuleFor(x => x.StoreId).NotEmpty().WithMessage("StoreId is required.").GreaterThan(0).WithMessage("StoreId must be a positive integer.");
+
     }
 }

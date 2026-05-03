@@ -25,7 +25,7 @@ public class ProductService
         _mapper = mapper;
     }
 
-    public async Task<ApiResponseDto<ProductResponseDTO>> CreateProduct(ProductCreateDTO productDto, string userId)
+    public async Task<ApiResponseDto<ProductResponseDTO>> CreateProduct(ProductCreateDTO productDto, string userId, int storeId)
     {
         ValidationResult validationResult = _productValidator.Validate(productDto);
 
@@ -37,7 +37,7 @@ public class ProductService
             );
         }
 
-        Store? store = await _context.Stores.FirstOrDefaultAsync(s => s.Id == productDto.StoreId);
+        Store? store = await _context.Stores.FirstOrDefaultAsync(s => s.Id == storeId);
 
         if (store == null)
         {
@@ -50,6 +50,8 @@ public class ProductService
         }
 
         Product newProduct = _mapper.Map<Product>(productDto);
+        newProduct.StoreId = storeId;
+        newProduct.Store = store;
 
         await _context.Products.AddAsync(newProduct);
         await _context.SaveChangesAsync();
@@ -59,20 +61,27 @@ public class ProductService
         return ApiResponseDto<ProductResponseDTO>.SuccessResult(response, "Product created successfully.");
     }
 
-    public async Task<ApiResponseDto<ProductResponseDTO>> GetProductById(int id, string userId)
+    public async Task<ApiResponseDto<ProductResponseDTO>> GetProductById(int storeId, int id, string userId)
     {
-        Product? product = await _context
-            .Products.Include(p => p.Store)
-            .FirstOrDefaultAsync(i => i.Id == id);
+        Product? product = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
 
         if (product == null)
         {
             return ApiResponseDto<ProductResponseDTO>.ErrorResult("Product not found.", new List<string> { "Product with the provided ID does not exist." });
         }
 
-        if (product.Store == null || product.Store.UserId != userId)
+
+
+        Store? store = await _context.Stores.FirstOrDefaultAsync(s => s.Id == storeId);
+
+        if (store == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.", new List<string> { "You are not the owner of this product's store." });
+            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Store not found.", new List<string> { "Store with the provided ID does not exist." });
+        }
+
+        if (store.UserId != userId)
+        {
+            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.", new List<string> { "You are not the owner of this store." });
         }
 
         ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(product);
@@ -102,12 +111,10 @@ public class ProductService
     }
 
     public async Task<ApiResponseDto<ProductResponseDTO>> UpdateProduct(
-        int id,
-        UpdateProductDTO productDto,
-        string userId
+     UpdateProductRequest req
     )
     {
-        ValidationResult validationResult = _productUpdateValidator.Validate(productDto);
+        ValidationResult validationResult = _productUpdateValidator.Validate(req.Data);
 
         if (!validationResult.IsValid)
         {
@@ -117,22 +124,23 @@ public class ProductService
             );
         }
 
+
         Product? existingProduct = await _context
             .Products.Include(p => p.Store)
-            .FirstOrDefaultAsync(i => i.Id == id);
+            .FirstOrDefaultAsync(i => i.Id == req.ProductId);
 
         if (existingProduct == null)
         {
             return ApiResponseDto<ProductResponseDTO>.ErrorResult("Product not found.");
         }
 
-        if (existingProduct.Store == null || existingProduct.Store.UserId != userId)
+        if (existingProduct.Store == null || existingProduct.Store.UserId != req.UserId)
         {
             return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
         }
 
 
-        _mapper.Map(productDto, existingProduct);
+        _mapper.Map(req.Data, existingProduct);
         await _context.SaveChangesAsync();
 
         ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(existingProduct);
@@ -140,11 +148,13 @@ public class ProductService
         return ApiResponseDto<ProductResponseDTO>.SuccessResult(response, "Product updated successfully.");
     }
 
-    public async Task<ApiResponseDto<bool>> DeleteProduct(int id, string userId)
+    public async Task<ApiResponseDto<bool>> DeleteProduct(int id, string userId, int storeId)
     {
         Product? deletedProduct = await _context
-            .Products.Include(p => p.Store)
+            .Products
             .FirstOrDefaultAsync(p => p.Id == id);
+
+        Store? store = await _context.Stores.FirstOrDefaultAsync(s => s.Id == storeId);
 
         if (deletedProduct == null)
         {

@@ -22,10 +22,10 @@ public class UserController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(new { status = false, message = "You Must Login First", error = "Unauthorized" });
         }
 
-        ApiResponseDto<User> response = await _userService.GetCurrentUserAsync(userId);
+        ApiResponseDto<UserResponseDTO> response = await _userService.GetCurrentUserAsync(userId);
 
         if (!response.Success)
         {
@@ -59,7 +59,7 @@ public class UserController : ControllerBase
             return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
         }
 
-        ApiResponseDto<User> response = await _userService.UpdateCurrentUserAsync(
+        ApiResponseDto<UserResponseDTO> response = await _userService.UpdateCurrentUserAsync(
             userId,
             updateUserDto
         );

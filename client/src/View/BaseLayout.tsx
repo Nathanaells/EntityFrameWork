@@ -1,5 +1,6 @@
 import { useNavigate, Outlet } from "react-router";
 import { useEffect } from "react";
+import Navbar from "../Components/Navbar";
 
 export default function BaseLayout() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function BaseLayout() {
 
   return (
     <>
+      <Navbar />
       <Outlet />
     </>
   );

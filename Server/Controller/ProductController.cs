@@ -16,7 +16,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProduct([FromBody] ProductCreateDTO productDto)
+    public async Task<IActionResult> CreateProduct([FromBody] ProductCreateDTO productDto, [FromRoute] int storeId)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -27,7 +27,8 @@ public class ProductController : ControllerBase
 
         ApiResponseDto<ProductResponseDTO> response = await _productService.CreateProduct(
             productDto,
-            userId
+            userId,
+            storeId
         );
 
         if (!response.Success)
@@ -53,8 +54,42 @@ public class ProductController : ControllerBase
         );
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetProductsByStoreId([FromRoute] int storeId)
+    {
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+        }
+
+        ApiResponseDto<List<ProductResponseDTO>> response = await _productService.GetProductsByStoreId(storeId, userId);
+
+        if (!response.Success)
+        {
+            return NotFound(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors
+                }
+            );
+        }
+
+        return Ok(
+            new
+            {
+                status = true,
+                message = response.Message,
+                data = response.Data
+            }
+        );
+    }
+
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetProductById(int id)
+    public async Task<IActionResult> GetProductById([FromRoute] int storeId, int id)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -64,6 +99,7 @@ public class ProductController : ControllerBase
         }
 
         ApiResponseDto<ProductResponseDTO> response = await _productService.GetProductById(
+            storeId,
             id,
             userId
         );
@@ -93,7 +129,7 @@ public class ProductController : ControllerBase
 
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO productDto)
+    public async Task<IActionResult> UpdateProduct([FromRoute] int storeId, [FromBody] UpdateProductDTO productDto, int id)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -102,10 +138,16 @@ public class ProductController : ControllerBase
             return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
         }
 
+        UpdateProductRequest updateRequest = new UpdateProductRequest
+        {
+            ProductId = id,
+            StoreId = storeId,
+            UserId = userId,
+            Data = productDto
+        };
+
         ApiResponseDto<ProductResponseDTO> response = await _productService.UpdateProduct(
-            id,
-            productDto,
-            userId
+            updateRequest
         );
 
         if (!response.Success)
@@ -131,7 +173,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteProduct(int id)
+    public async Task<IActionResult> DeleteProduct([FromRoute] int storeId, int id)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -140,7 +182,7 @@ public class ProductController : ControllerBase
             return StatusCode(403, new { status = false, message = "Forbidden", error = "Forbidden" });
         }
 
-        ApiResponseDto<bool> response = await _productService.DeleteProduct(id, userId);
+        ApiResponseDto<bool> response = await _productService.DeleteProduct(id, userId, storeId);
 
         if (!response.Success)
         {

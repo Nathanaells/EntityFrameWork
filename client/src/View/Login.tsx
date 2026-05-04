@@ -1,83 +1,114 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { FetchLogin } from "../API/FetchAPI";
+import { ShowError, ShowSuccess } from "../Constant/UIMessage";
+
 export default function Login() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
+  };
+
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    try {
+      e.preventDefault();
+      const result = await FetchLogin(form);
+
+      if (result.status && result.data?.token) {
+        localStorage.setItem("token", result.data.token);
+        ShowSuccess(result.message);
+        navigate("/");
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        ShowError(error.message);
+      } else {
+        ShowError(String(error));
+      }
+    }
+  }
+
   return (
-    <>
-      (
-      <>
-        <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-          <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+    <div className="min-h-screen bg-white px-6 py-12 text-slate-900">
+      <div className="mx-auto w-full max-w-md">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
+          <div className="flex flex-col items-center gap-3">
             <img
               alt="Your Company"
               src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-              className="mx-auto h-10 w-auto"
+              className="h-12 w-auto"
             />
-            <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
               Sign in to your account
             </h2>
+            <p className="text-sm text-slate-500">
+              Welcome back. Please enter your details.
+            </p>
           </div>
 
-          <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-            <form action="#" method="POST" className="space-y-6">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm/6 font-medium text-gray-100"
-                >
-                  Email address
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
-                  />
-                </div>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                Email address
+              </label>
+              <div className="mt-2">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-base text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 sm:text-sm"
+                  onChange={(e) => handleChange(e)}
+                />
               </div>
+            </div>
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm/6 font-medium text-gray-100"
-                  >
-                    Password
-                  </label>
-                  <div className="text-sm">
-                    <a
-                      href="#"
-                      className="font-semibold text-indigo-400 hover:text-indigo-300"
-                    >
-                      Forgot password?
-                    </a>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                    className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <div className="mt-2">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-base text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 sm:text-sm"
+                  onChange={(e) => handleChange(e)}
+                />
               </div>
+            </div>
 
-              <div>
-                <button
-                  type="submit"
-                  className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                >
-                  Sign in
-                </button>
-              </div>
-            </form>
-          </div>
+            <div>
+              <button
+                type="submit"
+                className="flex w-full items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              >
+                Sign in
+              </button>
+            </div>
+            <div className="text-center text-sm text-slate-500">
+              <a
+                href="/register"
+                className="text-sm text-indigo-600 hover:text-indigo-500"
+              >
+                Don't have an account? Sign up
+              </a>
+            </div>
+          </form>
         </div>
-      </>
-      )
-    </>
+      </div>
+    </div>
   );
 }

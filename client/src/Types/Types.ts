@@ -4,7 +4,6 @@ export interface RegisterForm {
   password: string;
 }
 
-
 export interface LoginForm {
   email: string;
   password: string;
@@ -12,11 +11,11 @@ export interface LoginForm {
 
 export interface LoginData {
   token: string;
-};
+}
 
 export interface User {
   id?: string;
-  username: string;
+  userName: string;
   email: string;
 }
 
@@ -32,20 +31,17 @@ export interface ProductDTO {
   storeId: number;
 }
 
-
 export interface APIResponse<T> {
   status?: boolean;
-  success?: boolean;
   message: string;
   data?: T;
   error?: string;
 }
 
-
 export interface StoreResponseDTO {
-id : number;
-name : string;
-location : string;
+  id: number;
+  name: string;
+  location: string;
 }
 
 export interface ProductResponseDTO {
@@ -55,8 +51,8 @@ export interface ProductResponseDTO {
   storeId: number;
 }
 
-export interface UpdateProductDTO{
-  id : number;
+export interface UpdateProductDTO {
+  id: number;
   name?: string;
   price?: number;
   storeId: number;

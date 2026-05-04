@@ -52,6 +52,16 @@ public class AuthService : IAuthService
             );
         }
 
+        User? existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
+
+        if (existingUser != null)
+        {
+            return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
+                "Email already in use.",
+                new List<string> { "A user with this email already exists." }
+            );
+        }
+
         User user = _mapper.Map<User>(registerDto);
 
         IdentityResult result = await _userManager.CreateAsync(user, registerDto.Password);
@@ -92,7 +102,7 @@ public class AuthService : IAuthService
             {
                 return ApiResponseDto<LoginResponseDTO>.ErrorResult(
                     "Login failed.",
-                    new List<string> { "User not found." }
+                    new List<string> { "Invalid email or password." }
                 );
             }
 

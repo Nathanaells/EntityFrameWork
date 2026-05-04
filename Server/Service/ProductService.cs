@@ -118,14 +118,14 @@ public class ProductService : IProductService
         ProductRequestDTO request
     )
     {
-        Product? product = await _productRepository.GetProductByIdWithStoreAsync(request.StoreId);
+        Store? store = await _storeRepository.GetStoreByIdAsync(request.StoreId);
 
-        if (product?.Store == null)
+        if (store == null)
         {
             return ApiResponseDto<List<ProductResponseDTO>>.ErrorResult("Store not found.");
         }
 
-        if (product.Store.UserId != request.UserId)
+        if (store.UserId != request.UserId)
         {
             return ApiResponseDto<List<ProductResponseDTO>>.ErrorResult("Access denied.");
         }

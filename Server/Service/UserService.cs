@@ -75,8 +75,25 @@ public class UserService : IUserService
             );
         }
 
-        user.DisplayName = updateUserDto.Username;
-        user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, updateUserDto.Password);
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
+        {
+            user.DisplayName = updateUserDto.Username;
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
+        {
+            user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, updateUserDto.Password);
+        }
+
+        IdentityResult updateResult = await _userManager.UpdateAsync(user);
+
+        if (!updateResult.Succeeded)
+        {
+            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+                "User update failed.",
+                updateResult.Errors.Select(e => e.Description).ToList()
+            );
+        }
 
         UserResponseDTO userResponse = _mapper.Map<UserResponseDTO>(user);
 

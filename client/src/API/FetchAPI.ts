@@ -1,80 +1,75 @@
 import { BASE_URL } from "../Constant/BaseURL";
-import type {RegisterForm, LoginForm, User, APIResponse, LoginData, StoreResponseDTO, StoreDTO, ProductResponseDTO, ProductDTO, UpdateProductDTO} from "../Types/Types";
-
-function normalizeResponse<T>(data: APIResponse<T>): APIResponse<T> {
-  const success = data.success ?? data.status ?? false;
-  return { ...data, success };
-}
-
+import type {
+  RegisterForm,
+  LoginForm,
+  User,
+  APIResponse,
+  LoginData,
+  StoreResponseDTO,
+  StoreDTO,
+  ProductResponseDTO,
+  ProductDTO,
+  UpdateProductDTO,
+} from "../Types/Types";
 
 export async function FetchRegister(
-  RegisterForm: RegisterForm
+  RegisterForm: RegisterForm,
 ): Promise<APIResponse<User>> {
   try {
     const response = await fetch(`${BASE_URL}auth/register`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({username : RegisterForm.DisplayName, email : RegisterForm.email, password : RegisterForm.password})
+      body: JSON.stringify({
+        username: RegisterForm.DisplayName,
+        email: RegisterForm.email,
+        password: RegisterForm.password,
+      }),
     });
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
     const data: APIResponse<User> = await response.json();
-    const normalized = normalizeResponse(data);
 
-    if (!normalized.success) {
-      const message = normalized.error || normalized.message || "Registration failed";
-      throw new Error(message);
+    if (!data.status) {
+      throw new Error(data.error);
     }
 
-    return normalized;
+    return data;
   } catch (error) {
-    throw new Error(
-      `Registration failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-export async function FetchLogin(LoginForm: LoginForm) : Promise<APIResponse<LoginData>> {
+export async function FetchLogin(
+  LoginForm: LoginForm,
+): Promise<APIResponse<LoginData>> {
   try {
     const response = await fetch(`${BASE_URL}auth/login`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        LoginForm
-      })
+        email: LoginForm.email,
+        password: LoginForm.password,
+      }),
     });
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
+    const data: APIResponse<LoginData> = await response.json();
+
+    if (!data.status) {
+      throw new Error(data.error || "Login failed");
     }
 
-    const data : APIResponse<LoginData> = await response.json();
-    const normalized = normalizeResponse(data);
-
-    if(!normalized.success) {
-      throw new Error(normalized.error || "Login failed");
-    }
-
-    return normalized;
-
+    return data;
   } catch (error) {
-    throw new Error(`Login failed: ${error instanceof Error ? error.message : String(error)}`); 
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
-
 
 //User API
 
-export async function FetchUserData() : Promise<APIResponse<User>> {
+export async function FetchUserData(): Promise<APIResponse<User>> {
   try {
     const token = localStorage.getItem("token");
 
@@ -82,157 +77,160 @@ export async function FetchUserData() : Promise<APIResponse<User>> {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      throw new Error(await response.text());
     }
 
     const data: APIResponse<User> = await response.json();
-    const normalized = normalizeResponse(data);
 
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to fetch user data");
+    if (!data.status) {
+      throw new Error(data.error || "Failed to fetch user data");
     }
 
-    return normalized;
+    return data;
   } catch (error) {
-    throw new Error(`Failed to fetch user data: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-export async function FetchUpdateUser(update : User) : Promise<APIResponse<User>> 
-{
-  try{
+export async function FetchUpdateUser(
+  update: User,
+): Promise<APIResponse<User>> {
+  try {
     const token = localStorage.getItem("token");
 
     const response = await fetch(`${BASE_URL}user/me`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(update)
+      body: JSON.stringify({
+        username: update.userName,
+        email: update.email,
+      }),
     });
 
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      throw new Error(await response.text());
     }
 
     const data: APIResponse<User> = await response.json();
-    const normalized = normalizeResponse(data);
 
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to update user data");
+    if (!data.status) {
+      throw new Error(data.error || "Failed to update user data");
     }
 
-    return normalized;
+    return data;
   } catch (error) {
-    throw new Error(`Failed to update user data: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
-
 
 //Store API Calls
 
-export async function FetchStores() : Promise<APIResponse<StoreResponseDTO[]>> 
-{
+export async function FetchStores(): Promise<APIResponse<StoreResponseDTO[]>> {
   try {
     const token = localStorage.getItem("token");
 
-    const response = await fetch(`${BASE_URL}stores`, {
+    const response = await fetch(`${BASE_URL}store`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
+    const data: APIResponse<StoreResponseDTO[]> = await response.json();
+
+    if (!data.status) {
+      throw new Error(data.error || "Failed to fetch stores");
     }
 
-    const data : APIResponse<StoreResponseDTO[]> = await response.json();
-    const normalized = normalizeResponse(data);
-
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to fetch stores");
-    }
-
-    return normalized;
-  }catch (e : unknown){
-    throw new Error(`Failed to fetch stores: ${e instanceof Error ? e.message : String(e)}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-
-export async function CreateStore(dto : StoreDTO) : Promise<APIResponse<StoreResponseDTO>>
-{
+export async function CreateStore(
+  dto: StoreDTO,
+): Promise<APIResponse<StoreResponseDTO>> {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}stores`, {
+
+    if (!token) {
+      throw new Error("User is not authenticated");
+    }
+    const response = await fetch(`${BASE_URL}store`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(dto)
+      body: JSON.stringify({
+        name: dto.name,
+        location: dto.location,
+      }),
     });
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
     const data: APIResponse<StoreResponseDTO> = await response.json();
-    const normalized = normalizeResponse(data);
 
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to create store");
+    if (!data.status) {
+      throw new Error(data.error);
     }
 
-    return normalized;
-  } catch (e : unknown){
-    throw new Error(`Failed to create store: ${e instanceof Error ? e.message : String(e)}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-export async function UpdateStore(dto : StoreDTO, id : number) : Promise<APIResponse<StoreResponseDTO>>
-{
+export async function UpdateStore(
+  dto: StoreDTO,
+  id: number,
+): Promise<APIResponse<StoreResponseDTO>> {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}stores/${id}`, {
+    const response = await fetch(`${BASE_URL}store/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(dto)
-    }); 
+      body: JSON.stringify({
+        id,
+        name: dto.name,
+        location: dto.location,
+      }),
+    });
 
-      if(!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data : APIResponse<StoreResponseDTO> = await response.json();
-      return normalizeResponse(data);
-  }
-    catch (e : unknown){
-    throw new Error(`Failed to update store: ${e instanceof Error ? e.message : String(e)}`);
+    const data: APIResponse<StoreResponseDTO> = await response.json();
+
+    if (!data.status) {
+      throw new Error(data.error || "Failed to update store");
+    }
+
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-export async function DeleteStore(id : number) : Promise<APIResponse<boolean>>
-{
+export async function DeleteStore(id: number): Promise<APIResponse<boolean>> {
   try {
     const token = localStorage.getItem("token");
 
-    const response = await fetch(`${BASE_URL}stores/${id}`, {
+    const response = await fetch(`${BASE_URL}store/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
@@ -240,148 +238,155 @@ export async function DeleteStore(id : number) : Promise<APIResponse<boolean>>
     }
 
     const data: APIResponse<boolean> = await response.json();
-    const normalized = normalizeResponse(data);
 
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to delete store");
+    if (!data.status) {
+      throw new Error(data.error || "Failed to delete store");
     }
 
-    return normalized;
-  } catch (e : unknown) {
-    throw new Error(`Failed to delete store: ${e instanceof Error ? e.message : String(e)}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-export async function FetchStroreById(id : number) : Promise<APIResponse<StoreResponseDTO>>
-{
+export async function FetchStroreById(
+  id: number,
+): Promise<APIResponse<StoreResponseDTO>> {
   try {
-    const token = localStorage.getItem("token");  
-    const response = await fetch(`${BASE_URL}stores/${id}`, {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}store/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
-    }); 
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
-    const data : APIResponse<StoreResponseDTO> = await response.json();
-    const normalized = normalizeResponse(data);
+    const data: APIResponse<StoreResponseDTO> = await response.json();
 
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to fetch store");
+    if (!data.status) {
+      throw new Error(data.error || "Failed to fetch store");
     }
-    return normalized;
-  } catch (e : unknown) {
-    throw new Error(`Failed to fetch store: ${e instanceof Error ? e.message : String(e)}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
-
 
 //Product API calls
 
-
-export async function FetchProductsByStoreId(storeId : number) : Promise<APIResponse<ProductResponseDTO[]>>
-{
+export async function FetchProductsByStoreId(
+  storeId: number,
+): Promise<APIResponse<ProductResponseDTO[]>> {
   try {
     const token = localStorage.getItem("token");
-    const response : Response = await fetch(`${BASE_URL}stores/${storeId}/products`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
-    });
+    const response: Response = await fetch(
+      `${BASE_URL}store/${storeId}/product`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
     if (!response.ok) {
       throw new Error("Cannot Fetch Products");
     }
-    const data : APIResponse<ProductResponseDTO[]> = await response.json();
-    return normalizeResponse(data);
-  }
-  catch (e : unknown) {
-    throw new Error(`Failed to fetch products: ${e instanceof Error ? e.message : String(e)}`);
+    const data: APIResponse<ProductResponseDTO[]> = await response.json();
+
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-
-export async function CreateProduct(dto : ProductDTO, storeId : number) : Promise<APIResponse<ProductResponseDTO>>
-{
-  try{
+export async function CreateProduct(
+  dto: ProductDTO,
+  storeId: number,
+): Promise<APIResponse<ProductResponseDTO>> {
+  try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}stores/${storeId}/products`, {
+    const response = await fetch(`${BASE_URL}store/${storeId}/product`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(dto)
-    }); 
+      body: JSON.stringify(dto),
+    });
 
+    const data: APIResponse<ProductResponseDTO> = await response.json();
 
-    const data : APIResponse<ProductResponseDTO> = await response.json();
-    const normalized = normalizeResponse(data);
-
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to create product");
+    if (!data.status) {
+      throw new Error(data.error || "Failed to create product");
     }
-    return normalized;
-  }
-  catch (e : unknown) {
-    throw new Error(`Failed to create product: ${e instanceof Error ? e.message : String(e)}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
-
-export async function UpdateProduct(dto : UpdateProductDTO, storeId : number, productId : number) : Promise<APIResponse<ProductResponseDTO>>
-{
+export async function UpdateProduct(
+  dto: UpdateProductDTO,
+  storeId: number,
+  productId: number,
+): Promise<APIResponse<ProductResponseDTO>> {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}stores/${storeId}/products/${productId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+    const response = await fetch(
+      `${BASE_URL}store/${storeId}/product/${productId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(dto),
       },
-      body: JSON.stringify(dto)
-    });
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
-    const data : APIResponse<ProductResponseDTO> = await response.json();
-    const normalized = normalizeResponse(data);
+    const data: APIResponse<ProductResponseDTO> = await response.json();
 
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to update product");
+    if (!data.status) {
+      throw new Error(data.error || "Failed to update product");
     }
-    return normalized;
-  } catch (e : unknown) {
-    throw new Error(`Failed to update product: ${e instanceof Error ? e.message : String(e)}`);
-  } 
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
 }
 
-export async function DeleteProduct(storeId : number, productId : number) : Promise<APIResponse<boolean>>
-{
-  try{
+export async function DeleteProduct(
+  storeId: number,
+  productId: number,
+): Promise<APIResponse<boolean>> {
+  try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}stores/${storeId}/products/${productId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
-    });
+    const response = await fetch(
+      `${BASE_URL}store/${storeId}/product/${productId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
-    const data : APIResponse<boolean> = await response.json();
-    const normalized = normalizeResponse(data);
-    if (!normalized.success) {
-      throw new Error(normalized.error || "Failed to delete product");
+    const data: APIResponse<boolean> = await response.json();
+
+    if (!data.status) {
+      throw new Error(data.error || "Failed to delete product");
     }
-    return normalized;
-  }
-  catch (e : unknown) {
-    throw new Error(`Failed to delete product: ${e instanceof Error ? e.message : String(e)}`);
+    return data;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }

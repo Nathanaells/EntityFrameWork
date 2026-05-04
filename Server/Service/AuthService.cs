@@ -137,6 +137,8 @@ public class AuthService
         }
     }
 
+    public async Task<ApiResponseDto<>> 
+
     private string GenerateJwtToken(User user)
     {
         var jwtKey = _configuration["Jwt:Key"];

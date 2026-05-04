@@ -58,4 +58,31 @@ public class StoreService
 
         return ApiResponseDto<List<Store>>.SuccessResult(stores);
     }
+
+    public async Task<ApiResponseDto<Store>> UpdateStore(int id, StoreDTO storeDto)
+    {
+        ValidationResult validationResult = _storeValidator.Validate(storeDto);
+
+        if (!validationResult.IsValid)
+        {
+            return ApiResponseDto<Store>.ErrorResult(
+                "Invalid store data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+        }
+
+        Store? existingStore = await _context.Stores.FirstOrDefaultAsync(i => i.Id == id);
+
+        if (existingStore == null)
+        {
+            return ApiResponseDto<Store>.ErrorResult("Store not found.");
+        }
+
+        existingStore.Name = storeDto.Name;
+        existingStore.UserId = storeDto.UserId;
+
+        await _context.SaveChangesAsync();
+
+        return ApiResponseDto<Store>.SuccessResult(existingStore);
+    }
 }

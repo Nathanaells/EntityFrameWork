@@ -1,16 +1,16 @@
 using Implemented_MVC.DTOs;
+using Implemented_MVC.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Server.Service;
 
 [ApiController]
 [Route("api/[controller]")]
 [AllowAnonymous]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
     }
@@ -18,9 +18,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO registerDto)
     {
-        ApiResponseDto<RegisterResponseDTO> result = await _authService.RegisterAsync(
-            registerDto
-        );
+        ApiResponseDto<RegisterResponseDTO> result = await _authService.RegisterAsync(registerDto);
 
         if (!result.Success)
         {
@@ -29,7 +27,7 @@ public class AuthController : ControllerBase
                 {
                     status = false,
                     message = result.Message,
-                    error = result.Errors
+                    error = result.Errors,
                 }
             );
         }
@@ -40,7 +38,7 @@ public class AuthController : ControllerBase
             {
                 status = true,
                 message = result.Message,
-                data = result.Data
+                data = result.Data,
             }
         );
     }
@@ -57,7 +55,7 @@ public class AuthController : ControllerBase
                 {
                     status = false,
                     message = result.Message,
-                    error = result.Errors
+                    error = result.Errors,
                 }
             );
         }
@@ -67,7 +65,7 @@ public class AuthController : ControllerBase
             {
                 status = true,
                 message = result.Message,
-                data = result.Data
+                data = result.Data,
             }
         );
     }

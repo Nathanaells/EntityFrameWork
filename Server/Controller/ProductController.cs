@@ -1,28 +1,39 @@
 using System.Security.Claims;
+using Implemented_MVC.DTOs;
+using Implemented_MVC.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Implemented_MVC.DTOs;
 
 [ApiController]
 [Route("api/store/{storeId}/[controller]")]
 [Authorize]
 public class ProductController : ControllerBase
 {
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
 
-    public ProductController(ProductService productService)
+    public ProductController(IProductService productService)
     {
         _productService = productService;
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProduct([FromBody] ProductCreateDTO productDto, [FromRoute] int storeId)
+    public async Task<IActionResult> CreateProduct(
+        [FromBody] ProductCreateDTO productDto,
+        [FromRoute] int storeId
+    )
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         ApiResponseDto<ProductResponseDTO> response = await _productService.CreateProduct(
@@ -39,7 +50,7 @@ public class ProductController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -49,7 +60,7 @@ public class ProductController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
@@ -61,10 +72,20 @@ public class ProductController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
-        ApiResponseDto<List<ProductResponseDTO>> response = await _productService.GetProductsByStoreId(storeId, userId);
+        ProductRequestDTO request = new ProductRequestDTO { StoreId = storeId, UserId = userId };
+
+        ApiResponseDto<List<ProductResponseDTO>> response =
+            await _productService.GetProductsByStoreId(request);
 
         if (!response.Success)
         {
@@ -73,7 +94,7 @@ public class ProductController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -83,7 +104,7 @@ public class ProductController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
@@ -95,14 +116,24 @@ public class ProductController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
-        ApiResponseDto<ProductResponseDTO> response = await _productService.GetProductById(
-            storeId,
-            id,
-            userId
-        );
+        ProductRequestDTO request = new ProductRequestDTO
+        {
+            StoreId = storeId,
+            Id = id,
+            UserId = userId,
+        };
+
+        ApiResponseDto<ProductResponseDTO> response = await _productService.GetProductById(request);
 
         if (!response.Success)
         {
@@ -111,7 +142,7 @@ public class ProductController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -121,29 +152,33 @@ public class ProductController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
 
-
-
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProduct([FromRoute] int storeId, [FromBody] UpdateProductDTO productDto, int id)
+    public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductDTO productDto, int id)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         UpdateProductRequest updateRequest = new UpdateProductRequest
         {
-            ProductId = id,
-            StoreId = storeId,
+            Id = id,
             UserId = userId,
-            Data = productDto
+            Data = productDto,
         };
 
         ApiResponseDto<ProductResponseDTO> response = await _productService.UpdateProduct(
@@ -157,7 +192,7 @@ public class ProductController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -167,7 +202,7 @@ public class ProductController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
@@ -179,10 +214,25 @@ public class ProductController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return StatusCode(403, new { status = false, message = "Forbidden", error = "Forbidden" });
+            return StatusCode(
+                403,
+                new
+                {
+                    status = false,
+                    message = "Forbidden",
+                    error = "Forbidden",
+                }
+            );
         }
 
-        ApiResponseDto<bool> response = await _productService.DeleteProduct(id, userId, storeId);
+        ProductRequestDTO request = new ProductRequestDTO
+        {
+            StoreId = storeId,
+            Id = id,
+            UserId = userId,
+        };
+
+        ApiResponseDto<bool> response = await _productService.DeleteProduct(request);
 
         if (!response.Success)
         {
@@ -191,7 +241,7 @@ public class ProductController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -201,9 +251,8 @@ public class ProductController : ControllerBase
             {
                 status = true,
                 message = "Product deleted successfully.",
-                data = response.Data
+                data = response.Data,
             }
         );
     }
-
 }

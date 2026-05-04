@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Implemented_MVC.DTOs;
+using Implemented_MVC.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,9 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 [Authorize]
 public class UserController : ControllerBase
 {
-    private readonly UserService _userService;
+    private readonly IUserService _userService;
 
-    public UserController(UserService userService)
+    public UserController(IUserService userService)
     {
         _userService = userService;
     }
@@ -22,7 +23,14 @@ public class UserController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "You Must Login First", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "You Must Login First",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         ApiResponseDto<UserResponseDTO> response = await _userService.GetCurrentUserAsync(userId);
@@ -34,7 +42,7 @@ public class UserController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -44,7 +52,7 @@ public class UserController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
@@ -56,7 +64,14 @@ public class UserController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         ApiResponseDto<UserResponseDTO> response = await _userService.UpdateCurrentUserAsync(
@@ -71,7 +86,7 @@ public class UserController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -81,7 +96,7 @@ public class UserController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }

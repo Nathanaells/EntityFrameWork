@@ -1,7 +1,7 @@
 import { toast, Zoom } from "react-toastify";
 
 export const ShowSuccess = (message: string) => {
-  toast.success("🦄 Wow so easy!", {
+  toast.success(message, {
     position: "bottom-right",
     autoClose: 2000,
     hideProgressBar: true,
@@ -15,7 +15,7 @@ export const ShowSuccess = (message: string) => {
 };
 
 export const ShowError = (message: string) => {
-  toast.error("🦄 Wow so easy!", {
+  toast.error(message, {
     position: "bottom-right",
     autoClose: 2000,
     hideProgressBar: true,

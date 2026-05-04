@@ -1,16 +1,17 @@
 using System.Security.Claims;
+using Implemented_MVC.DTOs;
+using Implemented_MVC.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Implemented_MVC.DTOs;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public class StoreController : ControllerBase
 {
-    private readonly StoreService _storeService;
+    private readonly IStoreService _storeService;
 
-    public StoreController(StoreService storeService)
+    public StoreController(IStoreService storeService)
     {
         _storeService = storeService;
     }
@@ -22,7 +23,14 @@ public class StoreController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         ApiResponseDto<StoreResponseDTO> response = await _storeService.CreateStore(
@@ -37,7 +45,7 @@ public class StoreController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -48,7 +56,7 @@ public class StoreController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
@@ -60,13 +68,17 @@ public class StoreController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
-        ApiResponseDto<StoreResponseDTO> response = await _storeService.GetStoreById(
-            id,
-            userId
-        );
+        ApiResponseDto<StoreResponseDTO> response = await _storeService.GetStoreById(id, userId);
 
         if (!response.Success)
         {
@@ -75,7 +87,7 @@ public class StoreController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -85,21 +97,75 @@ public class StoreController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateStore(
+        [FromRoute] int id,
+        [FromBody] UpdateStoreDTO updateStoreDto
+    )
+    {
+        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
+        }
 
-    [HttpGet("stores")]
+        updateStoreDto.Id = id;
+
+        ApiResponseDto<StoreResponseDTO> response = await _storeService.UpdateStore(
+            updateStoreDto,
+            userId
+        );
+
+        if (!response.Success)
+        {
+            return BadRequest(
+                new
+                {
+                    status = false,
+                    message = response.Message,
+                    error = response.Errors,
+                }
+            );
+        }
+
+        return Ok(
+            new
+            {
+                status = true,
+                message = response.Message,
+                data = response.Data,
+            }
+        );
+    }
+
+    [HttpGet]
     public async Task<IActionResult> GetAllStores()
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         ApiResponseDto<List<StoreResponseDTO>> response = await _storeService.GetStoresByUserId(
@@ -113,7 +179,7 @@ public class StoreController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -123,12 +189,10 @@ public class StoreController : ControllerBase
             {
                 status = true,
                 message = response.Message,
-                data = response.Data
+                data = response.Data,
             }
         );
     }
-
-
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteStore(int id)
@@ -137,7 +201,14 @@ public class StoreController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Unauthorized(new { status = false, message = "Unauthorized", error = "Unauthorized" });
+            return Unauthorized(
+                new
+                {
+                    status = false,
+                    message = "Unauthorized",
+                    error = "Unauthorized",
+                }
+            );
         }
 
         ApiResponseDto<bool> response = await _storeService.DeleteStore(id, userId);
@@ -149,7 +220,7 @@ public class StoreController : ControllerBase
                 {
                     status = false,
                     message = response.Message,
-                    error = response.Errors
+                    error = response.Errors,
                 }
             );
         }
@@ -159,7 +230,7 @@ public class StoreController : ControllerBase
             {
                 status = true,
                 message = "Store deleted successfully.",
-                data = response.Data
+                data = response.Data,
             }
         );
     }

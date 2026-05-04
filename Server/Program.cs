@@ -1,12 +1,14 @@
 using System.Text;
 using FluentValidation;
-using Implemented_MVC.Validators;
 using Implemented_MVC.ExeptionHandler;
+using Implemented_MVC.Service.Interfaces;
+using Implemented_MVC.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Server.Repository.Interfaces;
 using Server.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +31,8 @@ builder
     .AddDefaultTokenProviders();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+builder.Services.Configure<JWtOptions>(jwtSettings);
 
 var key = Encoding.ASCII.GetBytes(
     jwtSettings["Key"] ?? "your-super-secret-key-that-is-at-least-256-bits-long"
@@ -55,17 +59,18 @@ builder
         };
     });
 
-
 //Mapper configuration
 
 builder.Services.AddAutoMapper(typeof(Program));
 
-
-
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Add Controller
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+//Add Fluent Validation
 builder.Services.AddScoped<IValidator<RegisterDTO>, RegisterDTOValidator>();
 builder.Services.AddScoped<IValidator<LoginDTO>, LoginDTOValidator>();
 builder.Services.AddScoped<IValidator<ProductCreateDTO>, ProductDTOValidator>();
@@ -73,17 +78,34 @@ builder.Services.AddScoped<IValidator<UpdateProductDTO>, ProductUpdateValidator>
 builder.Services.AddScoped<IValidator<StoreDTO>, StoreDTOValidator>();
 builder.Services.AddScoped<IValidator<UpdateUserDTO>, UpdateUserDTOValidator>();
 builder.Services.AddScoped<IValidator<UpdateProductDTO>, ProductUpdateValidator>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<ProductService>();
-builder.Services.AddScoped<StoreService>();
-builder.Services.AddScoped<UserService>();
 
+// Add Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
+// Add Repositoy
+//Here you can add your repositories if you have any, for example:
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IStoreRepository, StoreRepository>();
+
+//
 builder.Services.AddRouting(options =>
 {
     options.LowercaseUrls = true;
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowLocalhost",
+        policy =>
+        {
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    );
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc(
@@ -135,7 +157,6 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data S
 
 var app = builder.Build();
 
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -147,5 +168,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.UseHttpsRedirection();
+app.UseCors("AllowLocalhost");
 
 app.Run();

@@ -1,15 +1,21 @@
+using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Implemented_MVC.DTOs;
+using Implemented_MVC.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
-using AutoMapper;
-public class UserService
+
+public class UserService : IUserService
 {
     private readonly UserManager<User> _userManager;
     private readonly IValidator<UpdateUserDTO> _updateUserValidator;
     private readonly IMapper _mapper;
 
-    public UserService(UserManager<User> userManager, IValidator<UpdateUserDTO> updateUserValidator, IMapper mapper)
+    public UserService(
+        UserManager<User> userManager,
+        IValidator<UpdateUserDTO> updateUserValidator,
+        IMapper mapper
+    )
     {
         _userManager = userManager;
         _updateUserValidator = updateUserValidator;
@@ -22,7 +28,10 @@ public class UserService
 
         if (user == null)
         {
-            return ApiResponseDto<UserResponseDTO>.ErrorResult("User not found.", new List<string> { "User with the provided ID does not exist." });
+            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+                "User not found.",
+                new List<string> { "User with the provided ID does not exist." }
+            );
         }
 
         UserResponseDTO userResponse = _mapper.Map<UserResponseDTO>(user);
@@ -35,8 +44,10 @@ public class UserService
         UpdateUserDTO updateUserDto
     )
     {
-        if (string.IsNullOrWhiteSpace(updateUserDto.Username)
-            && string.IsNullOrWhiteSpace(updateUserDto.Password))
+        if (
+            string.IsNullOrWhiteSpace(updateUserDto.Username)
+            && string.IsNullOrWhiteSpace(updateUserDto.Password)
+        )
         {
             return ApiResponseDto<UserResponseDTO>.ErrorResult(
                 "No data to update.",
@@ -64,13 +75,14 @@ public class UserService
             );
         }
 
-
         user.DisplayName = updateUserDto.Username;
         user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, updateUserDto.Password);
 
-
         UserResponseDTO userResponse = _mapper.Map<UserResponseDTO>(user);
 
-        return ApiResponseDto<UserResponseDTO>.SuccessResult(userResponse, "User updated successfully.");
+        return ApiResponseDto<UserResponseDTO>.SuccessResult(
+            userResponse,
+            "User updated successfully."
+        );
     }
 }

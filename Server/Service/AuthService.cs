@@ -7,27 +7,28 @@ using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Implemented_MVC.DTOs;
+using Implemented_MVC.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly UserManager<User> _userManager;
 
+    private readonly JWtOptions _jwtOptions;
     private readonly IValidator<RegisterDTO> _registerValidator;
     private readonly IValidator<LoginDTO> _loginValidator;
     private readonly IValidator<UpdateUserDTO> _updateUserValidator;
 
     private readonly IMapper _mapper;
 
-    private readonly IConfiguration _configuration;
-
     public AuthService(
         UserManager<User> userManager,
         IValidator<RegisterDTO> registerValidator,
         IValidator<LoginDTO> loginValidator,
         IValidator<UpdateUserDTO> updateUserValidator,
-        IConfiguration configuration,
+        IOptions<JWtOptions> jwtOptions,
         IMapper mapper
     )
     {
@@ -35,50 +36,40 @@ public class AuthService
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
         _updateUserValidator = updateUserValidator;
-        _configuration = configuration;
+        _jwtOptions = jwtOptions.Value;
         _mapper = mapper;
     }
 
     public async Task<ApiResponseDto<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto)
     {
-        try
-        {
-            ValidationResult validationResult = _registerValidator.Validate(registerDto);
+        ValidationResult validationResult = _registerValidator.Validate(registerDto);
 
-            if (!validationResult.IsValid)
-            {
-                return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
-                    "Invalid registration data.",
-                    validationResult.Errors.Select(e => e.ErrorMessage).ToList()
-                );
-            }
-
-            User user = _mapper.Map<User>(registerDto);
-
-            IdentityResult result = await _userManager.CreateAsync(user, registerDto.Password);
-
-            if (!result.Succeeded)
-            {
-                return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
-                    "User registration failed.",
-                    result.Errors.Select(e => e.Description).ToList()
-                );
-            }
-
-            RegisterResponseDTO response = _mapper.Map<RegisterResponseDTO>(user);
-
-            return ApiResponseDto<RegisterResponseDTO>.SuccessResult(
-                response,
-                "User registered successfully."
-            );
-        }
-        catch (Exception ex)
+        if (!validationResult.IsValid)
         {
             return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
-                ex.Message,
-                new List<string> { "Unexpected error occurred during registration." }
+                "Invalid registration data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
             );
         }
+
+        User user = _mapper.Map<User>(registerDto);
+
+        IdentityResult result = await _userManager.CreateAsync(user, registerDto.Password);
+
+        if (!result.Succeeded)
+        {
+            return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
+                "User registration failed.",
+                result.Errors.Select(e => e.Description).ToList()
+            );
+        }
+
+        RegisterResponseDTO response = _mapper.Map<RegisterResponseDTO>(user);
+
+        return ApiResponseDto<RegisterResponseDTO>.SuccessResult(
+            response,
+            "User registered successfully."
+        );
     }
 
     public async Task<ApiResponseDto<LoginResponseDTO>> LoginAsync(LoginDTO loginDto)
@@ -121,7 +112,7 @@ public class AuthService
             {
                 Token = token,
                 UserId = user.Id,
-                Username = user.UserName,
+                Username = user.DisplayName,
             };
 
             return ApiResponseDto<LoginResponseDTO>.SuccessResult(response, "Login successful.");
@@ -135,86 +126,13 @@ public class AuthService
         }
     }
 
-    public async Task<ApiResponseDto<User>> UpdateUserAsyncById(
-        string userId,
-        UpdateUserDTO updateUserDto
-    )
-    {
-        if (
-            string.IsNullOrWhiteSpace(updateUserDto.Username)
-            && string.IsNullOrWhiteSpace(updateUserDto.Password)
-        )
-        {
-            return ApiResponseDto<User>.ErrorResult(
-                "No data to update.",
-                new List<string> { "Provide at least one field to update." }
-            );
-        }
-
-        ValidationResult validationResult = _updateUserValidator.Validate(updateUserDto);
-
-        if (!validationResult.IsValid)
-        {
-            return ApiResponseDto<User>.ErrorResult(
-                "Invalid user data.",
-                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
-            );
-        }
-
-        User? user = await _userManager.FindByIdAsync(userId);
-
-        if (user == null)
-        {
-            return ApiResponseDto<User>.ErrorResult(
-                "User update failed.",
-                new List<string> { "User not found." }
-            );
-        }
-
-        if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
-        {
-            user.UserName = updateUserDto.Username;
-            user.DisplayName = updateUserDto.Username;
-
-            IdentityResult result = await _userManager.UpdateAsync(user);
-
-            if (!result.Succeeded)
-            {
-                return ApiResponseDto<User>.ErrorResult(
-                    "User update failed.",
-                    result.Errors.Select(e => e.Description).ToList()
-                );
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
-        {
-            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-            IdentityResult passwordResult = await _userManager.ResetPasswordAsync(
-                user,
-                resetToken,
-                updateUserDto.Password
-            );
-
-            if (!passwordResult.Succeeded)
-            {
-                return ApiResponseDto<User>.ErrorResult(
-                    "Password update failed.",
-                    passwordResult.Errors.Select(e => e.Description).ToList()
-                );
-            }
-        }
-
-        return ApiResponseDto<User>.SuccessResult(user, "User updated successfully.");
-    }
-
     private string GenerateJwtToken(User user)
     {
-        var jwtKey = _configuration["Jwt:Key"];
-        var jwtIssuer = _configuration["Jwt:Issuer"];
-        var jwtAudience = _configuration["Jwt:Audience"];
+        string jwtKey = _jwtOptions.Key;
+        string jwtIssuer = _jwtOptions.Issuer;
+        string jwtAudience = _jwtOptions.Audience;
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

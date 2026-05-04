@@ -1,21 +1,28 @@
 using AutoMapper;
-using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Implemented_MVC.DTOs;
-using Microsoft.EntityFrameworkCore;
+using Implemented_MVC.Service.Interfaces;
+using Server.Repository.Interfaces;
 
-public class StoreService
+public class StoreService : IStoreService
 {
     private readonly AppDbContext _context;
     private readonly IValidator<StoreDTO> _storeValidator;
+    private readonly IStoreRepository _storeRepository;
 
     private readonly IMapper _mapper;
 
-    public StoreService(AppDbContext context, IValidator<StoreDTO> storeValidator, IMapper mapper)
+    public StoreService(
+        AppDbContext context,
+        IValidator<StoreDTO> storeValidator,
+        IStoreRepository storeRepository,
+        IMapper mapper
+    )
     {
         _context = context;
         _storeValidator = storeValidator;
+        _storeRepository = storeRepository;
         _mapper = mapper;
     }
 
@@ -38,11 +45,9 @@ public class StoreService
         Store newStore = _mapper.Map<Store>(storeDto);
         newStore.UserId = userId;
 
-        await _context.Stores.AddAsync(newStore);
+        await _storeRepository.CreateStoreAsync(newStore);
 
         StoreResponseDTO response = _mapper.Map<StoreResponseDTO>(newStore);
-
-        await _context.SaveChangesAsync();
 
         return ApiResponseDto<StoreResponseDTO>.SuccessResult(
             response,
@@ -52,7 +57,7 @@ public class StoreService
 
     public async Task<ApiResponseDto<StoreResponseDTO>> GetStoreById(int id, string userId)
     {
-        Store? store = await _context.Stores.FirstOrDefaultAsync(i => i.Id == id);
+        Store? store = await _storeRepository.GetStoreByIdAsync(id);
 
         if (store == null)
         {
@@ -74,13 +79,13 @@ public class StoreService
 
         return ApiResponseDto<StoreResponseDTO>.SuccessResult(
             response,
-            $"Store Owned by user : {userId}."
+            "Successfully retrieved store."
         );
     }
 
     public async Task<ApiResponseDto<List<StoreResponseDTO>>> GetStoresByUserId(string userId)
     {
-        List<Store> stores = await _context.Stores.Where(s => s.UserId == userId).ToListAsync();
+        List<Store> stores = await _storeRepository.GetStoresByUserIdAsync(userId);
 
         if (stores.Count == 0)
         {
@@ -92,14 +97,48 @@ public class StoreService
 
         List<StoreResponseDTO> response = _mapper.Map<List<StoreResponseDTO>>(stores).ToList();
 
-        List<StoreResponseDTO> response = _mapper.Map<List<StoreResponseDTO>>(stores).ToList();
-
         return ApiResponseDto<List<StoreResponseDTO>>.SuccessResult(response);
+    }
+
+    public async Task<ApiResponseDto<StoreResponseDTO>> UpdateStore(
+        UpdateStoreDTO req,
+        string userId
+    )
+    {
+        Store? store = await _storeRepository.GetStoreByIdAsync(req.Id);
+
+        if (store == null)
+        {
+            return ApiResponseDto<StoreResponseDTO>.ErrorResult(
+                "Store not found.",
+                new List<string> { "Store with the provided ID does not exist." }
+            );
+        }
+
+        if (store.UserId != userId)
+        {
+            return ApiResponseDto<StoreResponseDTO>.ErrorResult(
+                "Access denied.",
+                new List<string> { "You are not the owner of this store." }
+            );
+        }
+
+        store.Name = req.Name;
+        store.Location = req.Location;
+
+        await _storeRepository.UpdateStoreAsync(store);
+
+        StoreResponseDTO response = _mapper.Map<StoreResponseDTO>(store);
+
+        return ApiResponseDto<StoreResponseDTO>.SuccessResult(
+            response,
+            "Store updated successfully."
+        );
     }
 
     public async Task<ApiResponseDto<bool>> DeleteStore(int id, string userId)
     {
-        Store? store = await _context.Stores.FirstOrDefaultAsync(s => s.Id == id);
+        Store? store = await _storeRepository.GetStoreByIdAsync(id);
 
         if (store == null)
         {
@@ -117,8 +156,7 @@ public class StoreService
             );
         }
 
-        _context.Stores.Remove(store);
-        await _context.SaveChangesAsync();
+        await _storeRepository.DeleteStoreAsync(store.Id);
 
         return ApiResponseDto<bool>.SuccessResult(true);
     }

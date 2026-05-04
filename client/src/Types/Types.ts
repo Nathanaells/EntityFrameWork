@@ -1,22 +1,26 @@
 export interface RegisterForm {
-  username: string;
+  DisplayName: string;
   email: string;
   password: string;
 }
+
 
 export interface LoginForm {
   email: string;
   password: string;
 }
 
+export interface LoginData {
+  token: string;
+};
+
 export interface User {
-  id: string;
+  id?: string;
   username: string;
   email: string;
 }
 
 export interface StoreDTO {
-  id: number;
   name: string;
   location: string;
 }
@@ -29,10 +33,31 @@ export interface ProductDTO {
 }
 
 
-
 export interface APIResponse<T> {
-  success: boolean;
+  status?: boolean;
+  success?: boolean;
   message: string;
   data?: T;
   error?: string;
+}
+
+
+export interface StoreResponseDTO {
+id : number;
+name : string;
+location : string;
+}
+
+export interface ProductResponseDTO {
+  id: number;
+  name: string;
+  price: number;
+  storeId: number;
+}
+
+export interface UpdateProductDTO{
+  id : number;
+  name?: string;
+  price?: number;
+  storeId: number;
 }

@@ -3,6 +3,7 @@ namespace Server.Service;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Implemented_MVC.DTOs;
@@ -15,6 +16,9 @@ public class AuthService
 
     private readonly IValidator<RegisterDTO> _registerValidator;
     private readonly IValidator<LoginDTO> _loginValidator;
+    private readonly IValidator<UpdateUserDTO> _updateUserValidator;
+
+    private readonly IMapper _mapper;
 
     private readonly IConfiguration _configuration;
 
@@ -22,13 +26,17 @@ public class AuthService
         UserManager<User> userManager,
         IValidator<RegisterDTO> registerValidator,
         IValidator<LoginDTO> loginValidator,
-        IConfiguration configuration
+        IValidator<UpdateUserDTO> updateUserValidator,
+        IConfiguration configuration,
+        IMapper mapper
     )
     {
         _userManager = userManager;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
+        _updateUserValidator = updateUserValidator;
         _configuration = configuration;
+        _mapper = mapper;
     }
 
     public async Task<ApiResponseDto<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto)
@@ -45,12 +53,7 @@ public class AuthService
                 );
             }
 
-            User user = new User
-            {
-                UserName = registerDto.Username,
-                Email = registerDto.Email,
-                Name = registerDto.Username,
-            };
+            User user = _mapper.Map<User>(registerDto);
 
             IdentityResult result = await _userManager.CreateAsync(user, registerDto.Password);
 
@@ -62,12 +65,7 @@ public class AuthService
                 );
             }
 
-            RegisterResponseDTO response = new RegisterResponseDTO
-            {
-                UserId = user.Id,
-                Username = user.UserName,
-                Email = user.Email,
-            };
+            RegisterResponseDTO response = _mapper.Map<RegisterResponseDTO>(user);
 
             return ApiResponseDto<RegisterResponseDTO>.SuccessResult(
                 response,
@@ -97,7 +95,7 @@ public class AuthService
                 );
             }
 
-            User? user = await _userManager.FindByNameAsync(loginDto.Username);
+            User? user = await _userManager.FindByEmailAsync(loginDto.Email);
 
             if (user == null)
             {
@@ -113,7 +111,7 @@ public class AuthService
             {
                 return ApiResponseDto<LoginResponseDTO>.ErrorResult(
                     "Login failed.",
-                    new List<string> { "Invalid username or password." }
+                    new List<string> { "Invalid email or password." }
                 );
             }
 
@@ -137,7 +135,78 @@ public class AuthService
         }
     }
 
-    public async Task<ApiResponseDto<>> 
+    public async Task<ApiResponseDto<User>> UpdateUserAsyncById(
+        string userId,
+        UpdateUserDTO updateUserDto
+    )
+    {
+        if (
+            string.IsNullOrWhiteSpace(updateUserDto.Username)
+            && string.IsNullOrWhiteSpace(updateUserDto.Password)
+        )
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "No data to update.",
+                new List<string> { "Provide at least one field to update." }
+            );
+        }
+
+        ValidationResult validationResult = _updateUserValidator.Validate(updateUserDto);
+
+        if (!validationResult.IsValid)
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "Invalid user data.",
+                validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+        }
+
+        User? user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
+        {
+            return ApiResponseDto<User>.ErrorResult(
+                "User update failed.",
+                new List<string> { "User not found." }
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
+        {
+            user.UserName = updateUserDto.Username;
+            user.DisplayName = updateUserDto.Username;
+
+            IdentityResult result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                return ApiResponseDto<User>.ErrorResult(
+                    "User update failed.",
+                    result.Errors.Select(e => e.Description).ToList()
+                );
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
+        {
+            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            IdentityResult passwordResult = await _userManager.ResetPasswordAsync(
+                user,
+                resetToken,
+                updateUserDto.Password
+            );
+
+            if (!passwordResult.Succeeded)
+            {
+                return ApiResponseDto<User>.ErrorResult(
+                    "Password update failed.",
+                    passwordResult.Errors.Select(e => e.Description).ToList()
+                );
+            }
+        }
+
+        return ApiResponseDto<User>.SuccessResult(user, "User updated successfully.");
+    }
 
     private string GenerateJwtToken(User user)
     {

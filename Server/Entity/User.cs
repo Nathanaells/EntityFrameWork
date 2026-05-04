@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 public class User : IdentityUser
 {
-    [Required]
-    public string Name { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
 
-    public ICollection<Store> Stores { get; set; }
+    public ICollection<Store> Stores { get; set; } = new List<Store>();
 }

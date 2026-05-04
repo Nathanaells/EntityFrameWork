@@ -1,6 +1,7 @@
-public record CreateProductDto
+public record ProductResponseDTO
 {
-    public string Name { get; set; }
-    public decimal Price { get; set; }
-    public int StoreId { get; set; }
+    public int Id { get; init; }
+    public required string Name { get; init; }
+    public decimal Price { get; init; }
+    public int StoreId { get; init; }
 }

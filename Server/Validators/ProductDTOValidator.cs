@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace Implemented_MVC.Validators;
 
-public class ProductDTOValidator : AbstractValidator<ProductDTO>
+public class ProductDTOValidator : AbstractValidator<ProductCreateDTO>
 {
     public ProductDTOValidator()
     {
@@ -13,5 +13,6 @@ public class ProductDTOValidator : AbstractValidator<ProductDTO>
             .WithMessage("Product name must be at least 3 characters long.");
 
         RuleFor(x => x.Price).GreaterThan(0).WithMessage("Price must be greater than zero.");
+
     }
 }

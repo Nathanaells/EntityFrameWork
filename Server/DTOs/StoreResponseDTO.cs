@@ -1,6 +1,6 @@
-public record CreateStoreDto
+public record StoreResponseDTO
 {
-    public string Name { get; set; }
-    public string Location { get; set; }
-    public string UserId { get; set; }
+    public int Id { get; init; }
+    public required string Name { get; init; }
+    public required string Location { get; init; }
 }

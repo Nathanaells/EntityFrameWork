@@ -180,17 +180,6 @@ export default function Navbar() {
                       required
                     />
                   </label>
-                  <label className="text-sm text-slate-700">
-                    Email
-                    <input
-                      name="email"
-                      type="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                      required
-                    />
-                  </label>
                 </div>
                 <div className="mt-4 flex justify-end">
                   <button

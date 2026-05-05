@@ -33,7 +33,7 @@ public class UserController : ControllerBase
             );
         }
 
-        ApiResponseDto<UserResponseDTO> response = await _userService.GetCurrentUserAsync(userId);
+        ServiceResult<UserResponseDTO> response = await _userService.GetCurrentUserAsync(userId);
 
         if (!response.Success)
         {
@@ -74,7 +74,7 @@ public class UserController : ControllerBase
             );
         }
 
-        ApiResponseDto<UserResponseDTO> response = await _userService.UpdateCurrentUserAsync(
+        ServiceResult<UserResponseDTO> response = await _userService.UpdateCurrentUserAsync(
             userId,
             updateUserDto
         );

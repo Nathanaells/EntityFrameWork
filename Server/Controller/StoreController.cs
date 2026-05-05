@@ -33,7 +33,7 @@ public class StoreController : ControllerBase
             );
         }
 
-        ApiResponseDto<StoreResponseDTO> response = await _storeService.CreateStore(
+        ServiceResult<StoreResponseDTO> response = await _storeService.CreateStore(
             storeDto,
             userId
         );
@@ -78,7 +78,7 @@ public class StoreController : ControllerBase
             );
         }
 
-        ApiResponseDto<StoreResponseDTO> response = await _storeService.GetStoreById(id, userId);
+        ServiceResult<StoreResponseDTO> response = await _storeService.GetStoreById(id, userId);
 
         if (!response.Success)
         {
@@ -124,7 +124,7 @@ public class StoreController : ControllerBase
 
         updateStoreDto.Id = id;
 
-        ApiResponseDto<StoreResponseDTO> response = await _storeService.UpdateStore(
+        ServiceResult<StoreResponseDTO> response = await _storeService.UpdateStore(
             updateStoreDto,
             userId
         );
@@ -168,7 +168,7 @@ public class StoreController : ControllerBase
             );
         }
 
-        ApiResponseDto<List<StoreResponseDTO>> response = await _storeService.GetStoresByUserId(
+        ServiceResult<List<StoreResponseDTO>> response = await _storeService.GetStoresByUserId(
             userId
         );
 
@@ -211,7 +211,7 @@ public class StoreController : ControllerBase
             );
         }
 
-        ApiResponseDto<bool> response = await _storeService.DeleteStore(id, userId);
+        ServiceResult<bool> response = await _storeService.DeleteStore(id, userId);
 
         if (!response.Success)
         {

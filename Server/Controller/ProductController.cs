@@ -36,7 +36,7 @@ public class ProductController : ControllerBase
             );
         }
 
-        ApiResponseDto<ProductResponseDTO> response = await _productService.CreateProduct(
+        ServiceResult<ProductResponseDTO> response = await _productService.CreateProduct(
             productDto,
             userId,
             storeId
@@ -84,7 +84,7 @@ public class ProductController : ControllerBase
 
         ProductRequestDTO request = new ProductRequestDTO { StoreId = storeId, UserId = userId };
 
-        ApiResponseDto<List<ProductResponseDTO>> response =
+        ServiceResult<List<ProductResponseDTO>> response =
             await _productService.GetProductsByStoreId(request);
 
         if (!response.Success)
@@ -133,7 +133,7 @@ public class ProductController : ControllerBase
             UserId = userId,
         };
 
-        ApiResponseDto<ProductResponseDTO> response = await _productService.GetProductById(request);
+        ServiceResult<ProductResponseDTO> response = await _productService.GetProductById(request);
 
         if (!response.Success)
         {
@@ -181,7 +181,7 @@ public class ProductController : ControllerBase
             Data = productDto,
         };
 
-        ApiResponseDto<ProductResponseDTO> response = await _productService.UpdateProduct(
+        ServiceResult<ProductResponseDTO> response = await _productService.UpdateProduct(
             updateRequest
         );
 
@@ -232,7 +232,7 @@ public class ProductController : ControllerBase
             UserId = userId,
         };
 
-        ApiResponseDto<bool> response = await _productService.DeleteProduct(request);
+        ServiceResult<bool> response = await _productService.DeleteProduct(request);
 
         if (!response.Success)
         {

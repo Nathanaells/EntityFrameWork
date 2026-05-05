@@ -40,13 +40,13 @@ public class AuthService : IAuthService
         _mapper = mapper;
     }
 
-    public async Task<ApiResponseDto<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto)
+    public async Task<ServiceResult<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto)
     {
         ValidationResult validationResult = _registerValidator.Validate(registerDto);
 
         if (!validationResult.IsValid)
         {
-            return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
+            return ServiceResult<RegisterResponseDTO>.ErrorResult(
                 "Invalid registration data.",
                 validationResult.Errors.Select(e => e.ErrorMessage).ToList()
             );
@@ -56,7 +56,7 @@ public class AuthService : IAuthService
 
         if (existingUser != null)
         {
-            return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
+            return ServiceResult<RegisterResponseDTO>.ErrorResult(
                 "Email already in use.",
                 new List<string> { "A user with this email already exists." }
             );
@@ -68,7 +68,7 @@ public class AuthService : IAuthService
 
         if (!result.Succeeded)
         {
-            return ApiResponseDto<RegisterResponseDTO>.ErrorResult(
+            return ServiceResult<RegisterResponseDTO>.ErrorResult(
                 "User registration failed.",
                 result.Errors.Select(e => e.Description).ToList()
             );
@@ -76,13 +76,13 @@ public class AuthService : IAuthService
 
         RegisterResponseDTO response = _mapper.Map<RegisterResponseDTO>(user);
 
-        return ApiResponseDto<RegisterResponseDTO>.SuccessResult(
+        return ServiceResult<RegisterResponseDTO>.SuccessResult(
             response,
             "User registered successfully."
         );
     }
 
-    public async Task<ApiResponseDto<LoginResponseDTO>> LoginAsync(LoginDTO loginDto)
+    public async Task<ServiceResult<LoginResponseDTO>> LoginAsync(LoginDTO loginDto)
     {
         try
         {
@@ -90,7 +90,7 @@ public class AuthService : IAuthService
 
             if (!validationResult.IsValid)
             {
-                return ApiResponseDto<LoginResponseDTO>.ErrorResult(
+                return ServiceResult<LoginResponseDTO>.ErrorResult(
                     "Invalid login data.",
                     validationResult.Errors.Select(e => e.ErrorMessage).ToList()
                 );
@@ -100,7 +100,7 @@ public class AuthService : IAuthService
 
             if (user == null)
             {
-                return ApiResponseDto<LoginResponseDTO>.ErrorResult(
+                return ServiceResult<LoginResponseDTO>.ErrorResult(
                     "Login failed.",
                     new List<string> { "Invalid email or password." }
                 );
@@ -110,7 +110,7 @@ public class AuthService : IAuthService
 
             if (!isPasswordValid)
             {
-                return ApiResponseDto<LoginResponseDTO>.ErrorResult(
+                return ServiceResult<LoginResponseDTO>.ErrorResult(
                     "Login failed.",
                     new List<string> { "Invalid email or password." }
                 );
@@ -125,11 +125,11 @@ public class AuthService : IAuthService
                 Username = user.DisplayName,
             };
 
-            return ApiResponseDto<LoginResponseDTO>.SuccessResult(response, "Login successful.");
+            return ServiceResult<LoginResponseDTO>.SuccessResult(response, "Login successful.");
         }
         catch (Exception ex)
         {
-            return ApiResponseDto<LoginResponseDTO>.ErrorResult(
+            return ServiceResult<LoginResponseDTO>.ErrorResult(
                 ex.Message,
                 new List<string> { "Unexpected error occurred during login." }
             );

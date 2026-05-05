@@ -30,7 +30,7 @@ public class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<ApiResponseDto<ProductResponseDTO>> CreateProduct(
+    public async Task<ServiceResult<ProductResponseDTO>> CreateProduct(
         ProductCreateDTO productDto,
         string userId,
         int storeId
@@ -40,7 +40,7 @@ public class ProductService : IProductService
 
         if (!validationResult.IsValid)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Invalid product data.",
                 validationResult.Errors.Select(e => e.ErrorMessage).ToList()
             );
@@ -50,7 +50,7 @@ public class ProductService : IProductService
 
         if (store == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Store not found.",
                 new List<string> { "Store with the provided ID does not exist." }
             );
@@ -58,7 +58,7 @@ public class ProductService : IProductService
 
         if (store.UserId != userId)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Access denied.",
                 new List<string> { "You are not the owner of this store." }
             );
@@ -72,19 +72,19 @@ public class ProductService : IProductService
 
         ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(newProduct);
 
-        return ApiResponseDto<ProductResponseDTO>.SuccessResult(
+        return ServiceResult<ProductResponseDTO>.SuccessResult(
             response,
             "Product created successfully."
         );
     }
 
-    public async Task<ApiResponseDto<ProductResponseDTO>> GetProductById(ProductRequestDTO request)
+    public async Task<ServiceResult<ProductResponseDTO>> GetProductById(ProductRequestDTO request)
     {
         Product? product = await _productRepository.GetProductByIdWithStoreAsync(request.Id);
 
         if (product == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Product not found.",
                 new List<string> { "Product with the provided ID does not exist." }
             );
@@ -92,7 +92,7 @@ public class ProductService : IProductService
 
         if (product.Store == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Store not found.",
                 new List<string> { "Store with the provided ID does not exist." }
             );
@@ -100,7 +100,7 @@ public class ProductService : IProductService
 
         if (product.Store.UserId != request.UserId)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Access denied.",
                 new List<string> { "You are not the owner of this store." }
             );
@@ -108,13 +108,13 @@ public class ProductService : IProductService
 
         ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(product);
 
-        return ApiResponseDto<ProductResponseDTO>.SuccessResult(
+        return ServiceResult<ProductResponseDTO>.SuccessResult(
             response,
             "Success retrieving product."
         );
     }
 
-    public async Task<ApiResponseDto<List<ProductResponseDTO>>> GetProductsByStoreId(
+    public async Task<ServiceResult<List<ProductResponseDTO>>> GetProductsByStoreId(
         ProductRequestDTO request
     )
     {
@@ -122,12 +122,18 @@ public class ProductService : IProductService
 
         if (store == null)
         {
-            return ApiResponseDto<List<ProductResponseDTO>>.ErrorResult("Store not found.");
+            return ServiceResult<List<ProductResponseDTO>>.ErrorResult(
+                "Store not found.",
+                new List<string> { "Store with the provided ID does not exist." }
+            );
         }
 
         if (store.UserId != request.UserId)
         {
-            return ApiResponseDto<List<ProductResponseDTO>>.ErrorResult("Access denied.");
+            return ServiceResult<List<ProductResponseDTO>>.ErrorResult(
+                "Access denied.",
+                new List<string> { "You are not the owner of this store." }
+            );
         }
 
         List<Product> products = await _productRepository.GetProductByStoreIdAsync(request.StoreId);
@@ -136,16 +142,16 @@ public class ProductService : IProductService
             .Map<List<ProductResponseDTO>>(products)
             .ToList();
 
-        return ApiResponseDto<List<ProductResponseDTO>>.SuccessResult(productResponses);
+        return ServiceResult<List<ProductResponseDTO>>.SuccessResult(productResponses);
     }
 
-    public async Task<ApiResponseDto<ProductResponseDTO>> UpdateProduct(UpdateProductRequest req)
+    public async Task<ServiceResult<ProductResponseDTO>> UpdateProduct(UpdateProductRequest req)
     {
         ValidationResult validationResult = _productUpdateValidator.Validate(req.Data);
 
         if (!validationResult.IsValid)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult(
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
                 "Invalid product data.",
                 validationResult.Errors.Select(e => e.ErrorMessage).ToList()
             );
@@ -155,12 +161,18 @@ public class ProductService : IProductService
 
         if (existingProduct == null)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Product not found.");
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
+                "Product not found.",
+                new List<string> { "Product with the provided ID does not exist." }
+            );
         }
 
         if (existingProduct.Store == null || existingProduct.Store.UserId != req.UserId)
         {
-            return ApiResponseDto<ProductResponseDTO>.ErrorResult("Access denied.");
+            return ServiceResult<ProductResponseDTO>.ErrorResult(
+                "Access denied.",
+                new List<string> { "You are not the owner of this product." }
+            );
         }
 
         _mapper.Map(req.Data, existingProduct);
@@ -169,13 +181,13 @@ public class ProductService : IProductService
 
         ProductResponseDTO response = _mapper.Map<ProductResponseDTO>(existingProduct);
 
-        return ApiResponseDto<ProductResponseDTO>.SuccessResult(
+        return ServiceResult<ProductResponseDTO>.SuccessResult(
             response,
             "Product updated successfully."
         );
     }
 
-    public async Task<ApiResponseDto<bool>> DeleteProduct(ProductRequestDTO request)
+    public async Task<ServiceResult<bool>> DeleteProduct(ProductRequestDTO request)
     {
         Product? productWithStore = await _productRepository.GetProductByIdWithStoreAsync(
             request.Id
@@ -183,15 +195,21 @@ public class ProductService : IProductService
 
         if (productWithStore == null)
         {
-            return ApiResponseDto<bool>.ErrorResult("Product not found.");
+            return ServiceResult<bool>.ErrorResult(
+                "Product not found.",
+                new List<string> { "Product with the provided ID does not exist." }
+            );
         }
 
         if (productWithStore.Store == null || productWithStore.Store.UserId != request.UserId)
         {
-            return ApiResponseDto<bool>.ErrorResult("Access denied.");
+            return ServiceResult<bool>.ErrorResult(
+                "Access denied.",
+                new List<string> { "You are not the owner of this product." }
+            );
         }
         await _productRepository.DeleteProductAsync(productWithStore.Id);
 
-        return ApiResponseDto<bool>.SuccessResult(true);
+        return ServiceResult<bool>.SuccessResult(true);
     }
 }

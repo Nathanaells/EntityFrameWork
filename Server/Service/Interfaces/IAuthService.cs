@@ -4,6 +4,6 @@ using Implemented_MVC.DTOs;
 
 public interface IAuthService
 {
-    public Task<ApiResponseDto<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto);
-    public Task<ApiResponseDto<LoginResponseDTO>> LoginAsync(LoginDTO loginDto);
+    public Task<ServiceResult<RegisterResponseDTO>> RegisterAsync(RegisterDTO registerDto);
+    public Task<ServiceResult<LoginResponseDTO>> LoginAsync(LoginDTO loginDto);
 }

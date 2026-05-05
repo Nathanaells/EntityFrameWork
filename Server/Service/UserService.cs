@@ -22,13 +22,13 @@ public class UserService : IUserService
         _mapper = mapper;
     }
 
-    public async Task<ApiResponseDto<UserResponseDTO>> GetCurrentUserAsync(string userId)
+    public async Task<ServiceResult<UserResponseDTO>> GetCurrentUserAsync(string userId)
     {
         User? user = await _userManager.FindByIdAsync(userId);
 
         if (user == null)
         {
-            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+            return ServiceResult<UserResponseDTO>.ErrorResult(
                 "User not found.",
                 new List<string> { "User with the provided ID does not exist." }
             );
@@ -36,10 +36,10 @@ public class UserService : IUserService
 
         UserResponseDTO userResponse = _mapper.Map<UserResponseDTO>(user);
 
-        return ApiResponseDto<UserResponseDTO>.SuccessResult(userResponse);
+        return ServiceResult<UserResponseDTO>.SuccessResult(userResponse);
     }
 
-    public async Task<ApiResponseDto<UserResponseDTO>> UpdateCurrentUserAsync(
+    public async Task<ServiceResult<UserResponseDTO>> UpdateCurrentUserAsync(
         string userId,
         UpdateUserDTO updateUserDto
     )
@@ -49,7 +49,7 @@ public class UserService : IUserService
             && string.IsNullOrWhiteSpace(updateUserDto.Password)
         )
         {
-            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+            return ServiceResult<UserResponseDTO>.ErrorResult(
                 "No data to update.",
                 new List<string> { "Provide at least one field to update." }
             );
@@ -59,7 +59,7 @@ public class UserService : IUserService
 
         if (!validationResult.IsValid)
         {
-            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+            return ServiceResult<UserResponseDTO>.ErrorResult(
                 "Invalid user data.",
                 validationResult.Errors.Select(e => e.ErrorMessage).ToList()
             );
@@ -69,7 +69,7 @@ public class UserService : IUserService
 
         if (user == null)
         {
-            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+            return ServiceResult<UserResponseDTO>.ErrorResult(
                 "User update failed.",
                 new List<string> { "User not found." }
             );
@@ -82,14 +82,17 @@ public class UserService : IUserService
 
         if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
         {
-            user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, updateUserDto.Password);
+            user.PasswordHash = _userManager.PasswordHasher.HashPassword(
+                user,
+                updateUserDto.Password
+            );
         }
 
         IdentityResult updateResult = await _userManager.UpdateAsync(user);
 
         if (!updateResult.Succeeded)
         {
-            return ApiResponseDto<UserResponseDTO>.ErrorResult(
+            return ServiceResult<UserResponseDTO>.ErrorResult(
                 "User update failed.",
                 updateResult.Errors.Select(e => e.Description).ToList()
             );
@@ -97,7 +100,7 @@ public class UserService : IUserService
 
         UserResponseDTO userResponse = _mapper.Map<UserResponseDTO>(user);
 
-        return ApiResponseDto<UserResponseDTO>.SuccessResult(
+        return ServiceResult<UserResponseDTO>.SuccessResult(
             userResponse,
             "User updated successfully."
         );

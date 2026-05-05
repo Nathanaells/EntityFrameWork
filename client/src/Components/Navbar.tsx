@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { FetchUpdateUser, FetchUserData } from "../API/FetchAPI";
-import { ShowError, ShowSuccess } from "../Constant/UIMessage";
+import { ShowError } from "../Constant/UIMessage";
 import type { User } from "../Types/Types";
 
 type PanelMode = "detail" | "edit" | null;
@@ -14,6 +14,13 @@ export default function Navbar() {
   const [form, setForm] = useState({
     username: "",
     email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({
+    username: [] as string[],
+    email: [] as string[],
+    password: [] as string[],
+    general: [] as string[],
   });
 
   useEffect(() => {
@@ -28,6 +35,7 @@ export default function Navbar() {
           setForm({
             username: result.data.userName ?? "",
             email: result.data.email ?? "",
+            password: "",
           });
         }
       } catch (error: unknown) {
@@ -66,20 +74,48 @@ export default function Navbar() {
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
       e.preventDefault();
+      setErrors({ username: [], email: [], password: [], general: [] });
       const result = await FetchUpdateUser({
-        ...user,
         userName: form.username,
         email: form.email,
+        password: form.password,
       });
 
       if (result.status && result.data) {
         setUser(result.data);
-        ShowSuccess(result.message);
+        setForm((prev) => ({
+          ...prev,
+          password: "",
+        }));
         setPanelMode("detail");
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      ShowError(message);
+      const messages = Array.isArray(error)
+        ? error
+        : error instanceof Error
+          ? [error.message]
+          : [String(error)];
+      const nextErrors = {
+        username: [],
+        email: [],
+        password: [],
+        general: [],
+      } as typeof errors;
+
+      messages.forEach((message) => {
+        const lower = message.toLowerCase();
+        if (lower.includes("username")) {
+          nextErrors.username.push(message);
+        } else if (lower.includes("email")) {
+          nextErrors.email.push(message);
+        } else if (lower.includes("password")) {
+          nextErrors.password.push(message);
+        } else {
+          nextErrors.general.push(message);
+        }
+      });
+
+      setErrors(nextErrors);
     }
   };
 
@@ -169,15 +205,73 @@ export default function Navbar() {
                 <p className="text-sm font-medium text-slate-900">
                   Update Profile
                 </p>
+                {errors.general.length > 0 && (
+                  <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    <ul className="list-disc space-y-1 pl-5">
+                      {errors.general.map((message, index) => (
+                        <li key={`${message}-${index}`}>{message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <label className="text-sm text-slate-700">
                     Username
+                    <div className="mt-2 h-10 overflow-auto">
+                      {errors.username.length > 0 && (
+                        <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                          {errors.username.map((message, index) => (
+                            <li key={`${message}-${index}`}>{message}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                     <input
                       name="username"
                       value={form.username}
                       onChange={handleChange}
                       className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
                       required
+                    />
+                  </label>
+                  <label className="text-sm text-slate-700">
+                    Email
+                    <div className="mt-2 h-10 overflow-auto">
+                      {errors.email.length > 0 && (
+                        <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                          {errors.email.map((message, index) => (
+                            <li key={`${message}-${index}`}>{message}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <input
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                      required
+                    />
+                  </label>
+                  <label className="text-sm text-slate-700">
+                    Password
+                    <div className="mt-2 h-10 overflow-auto">
+                      {errors.password.length > 0 && (
+                        <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                          {errors.password.map((message, index) => (
+                            <li key={`${message}-${index}`}>{message}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <input
+                      name="password"
+                      type="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Leave blank to keep current"
+                      className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
                     />
                   </label>
                 </div>

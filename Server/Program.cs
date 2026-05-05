@@ -162,10 +162,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExeptionHandler>();
+app.UseHttpsRedirection();
+app.UseCors("AllowLocalhost");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.UseHttpsRedirection();
-app.UseCors("AllowLocalhost");
 
 app.Run();

@@ -8,7 +8,16 @@ public class UpdateUserDTOValidator : AbstractValidator<UpdateUserDTO>
             .WithMessage("Username must be at least 5 characters long.")
             .NotEmpty()
             .WithMessage("Username cannot be empty.")
-            .When(x => !string.IsNullOrWhiteSpace(x.Username));
+            .When(x => !string.IsNullOrWhiteSpace(x.Username))
+            .When(x => x.Username != null);
+
+        RuleFor(x => x.Email)
+            .EmailAddress()
+            .WithMessage("Email format is invalid.")
+            .NotEmpty()
+            .WithMessage("Email cannot be empty.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Email))
+            .When(x => x.Email != null);
 
         RuleFor(x => x.Password)
             .MinimumLength(6)
@@ -19,7 +28,8 @@ public class UpdateUserDTOValidator : AbstractValidator<UpdateUserDTO>
             .Matches(@"[a-z]+").WithMessage("Password must contain at least one lowercase letter.")
             .Matches(@"[0-9]+").WithMessage("Password must contain at least one digit.")
             .Matches(@"[\W]+").WithMessage("Password must contain at least one special character.")
-            .When(x => !string.IsNullOrWhiteSpace(x.Password));
+            .When(x => !string.IsNullOrWhiteSpace(x.Password))
+            .When(x => x.Password != null);
 
 
     }

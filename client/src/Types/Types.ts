@@ -19,6 +19,12 @@ export interface User {
   email: string;
 }
 
+export interface UpdateUserPayload {
+  userName?: string;
+  email?: string;
+  password?: string;
+}
+
 export interface StoreDTO {
   name: string;
   location: string;
@@ -35,7 +41,7 @@ export interface APIResponse<T> {
   status?: boolean;
   message: string;
   data?: T;
-  error?: string;
+  error?: string | string[];
 }
 
 export interface StoreResponseDTO {

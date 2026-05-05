@@ -102,7 +102,7 @@ public class StoreController : ControllerBase
         );
     }
 
-    [HttpPut("{id}")]
+    [HttpPatch("{id}")]
     public async Task<IActionResult> UpdateStore(
         [FromRoute] int id,
         [FromBody] UpdateStoreDTO updateStoreDto
@@ -122,9 +122,10 @@ public class StoreController : ControllerBase
             );
         }
 
-        updateStoreDto.Id = id;
+
 
         ServiceResult<StoreResponseDTO> response = await _storeService.UpdateStore(
+            id,
             updateStoreDto,
             userId
         );

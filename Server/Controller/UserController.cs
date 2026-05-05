@@ -57,7 +57,7 @@ public class UserController : ControllerBase
         );
     }
 
-    [HttpPut("me")]
+    [HttpPatch("me")]
     public async Task<IActionResult> UpdateMe([FromBody] UpdateUserDTO updateUserDto)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -7,7 +7,7 @@ using Server.Repository.Interfaces;
 
 public class StoreService : IStoreService
 {
-    private readonly AppDbContext _context;
+
     private readonly IValidator<StoreDTO> _storeValidator;
     private readonly IStoreRepository _storeRepository;
 
@@ -20,7 +20,6 @@ public class StoreService : IStoreService
         IMapper mapper
     )
     {
-        _context = context;
         _storeValidator = storeValidator;
         _storeRepository = storeRepository;
         _mapper = mapper;
@@ -98,11 +97,12 @@ public class StoreService : IStoreService
     }
 
     public async Task<ServiceResult<StoreResponseDTO>> UpdateStore(
+        int id,
         UpdateStoreDTO req,
         string userId
     )
     {
-        Store? store = await _storeRepository.GetStoreByIdAsync(req.Id);
+        Store? store = await _storeRepository.GetStoreByIdAsync(id);
 
         if (store == null)
         {
@@ -120,8 +120,16 @@ public class StoreService : IStoreService
             );
         }
 
-        store.Name = req.Name;
-        store.Location = req.Location;
+        if (req.Name != null && !string.IsNullOrWhiteSpace(req.Name))
+        {
+            store.Name = req.Name;
+        }
+
+
+        if (req.Location != null && !string.IsNullOrWhiteSpace(req.Location))
+        {
+            store.Location = req.Location;
+        }
 
         await _storeRepository.UpdateStoreAsync(store);
 

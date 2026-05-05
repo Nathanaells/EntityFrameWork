@@ -157,7 +157,7 @@ public class ProductController : ControllerBase
         );
     }
 
-    [HttpPut("{id}")]
+    [HttpPatch("{id}")]
     public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductDTO productDto, int id)
     {
         string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -30,6 +30,11 @@ export default function StoreDetail() {
     price: 0,
     storeId: storeId || 0,
   });
+  const [addErrors, setAddErrors] = useState({
+    name: [] as string[],
+    price: [] as string[],
+    general: [] as string[],
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<UpdateProductDTO>({
     id: 0,
@@ -37,6 +42,12 @@ export default function StoreDetail() {
     price: 0,
     storeId: storeId || 0,
   });
+  const [editErrors, setEditErrors] = useState({
+    name: [] as string[],
+    price: [] as string[],
+    general: [] as string[],
+  });
+  const [pageErrors, setPageErrors] = useState<string[]>([]);
   const [productToDelete, setProductToDelete] =
     useState<ProductResponseDTO | null>(null);
 
@@ -95,6 +106,7 @@ export default function StoreDetail() {
       if (!storeId) {
         return;
       }
+      setAddErrors({ name: [], price: [], general: [] });
       const result = await CreateProduct(
         { ...newProduct, storeId, id: 0 },
         storeId,
@@ -106,8 +118,29 @@ export default function StoreDetail() {
         setProducts((prev) => [...prev, createdProduct]);
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      ShowError(message);
+      const messages = Array.isArray(error)
+        ? error
+        : error instanceof Error
+          ? [error.message]
+          : [String(error)];
+      const nextErrors = {
+        name: [],
+        price: [],
+        general: [],
+      } as typeof addErrors;
+
+      messages.forEach((message) => {
+        const lower = message.toLowerCase();
+        if (lower.includes("product name") || lower.includes("name")) {
+          nextErrors.name.push(message);
+        } else if (lower.includes("price")) {
+          nextErrors.price.push(message);
+        } else {
+          nextErrors.general.push(message);
+        }
+      });
+
+      setAddErrors(nextErrors);
     }
   };
 
@@ -116,14 +149,18 @@ export default function StoreDetail() {
       if (!storeId) {
         return;
       }
+      setPageErrors([]);
       const result = await DeleteProduct(storeId, productId);
       if (result.status) {
-        ShowSuccess(result.message);
         setProducts((prev) => prev.filter((item) => item.id !== productId));
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      ShowError(message);
+      const messages = Array.isArray(error)
+        ? error
+        : error instanceof Error
+          ? [error.message]
+          : [String(error)];
+      setPageErrors(messages);
     }
   };
 
@@ -135,6 +172,7 @@ export default function StoreDetail() {
       price: product.price,
       storeId: product.storeId,
     });
+    setEditErrors({ name: [], price: [], general: [] });
   };
 
   const handleUpdate = async (productId: number) => {
@@ -142,18 +180,39 @@ export default function StoreDetail() {
       if (!storeId) {
         return;
       }
+      setEditErrors({ name: [], price: [], general: [] });
       const result = await UpdateProduct(editForm, storeId, productId);
       if (result.status && result.data) {
         const updatedProduct = result.data;
-        ShowSuccess(result.message);
         setProducts((prev) =>
           prev.map((item) => (item.id === productId ? updatedProduct : item)),
         );
         setEditingId(null);
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      ShowError(message);
+      const messages = Array.isArray(error)
+        ? error
+        : error instanceof Error
+          ? [error.message]
+          : [String(error)];
+      const nextErrors = {
+        name: [],
+        price: [],
+        general: [],
+      } as typeof editErrors;
+
+      messages.forEach((message) => {
+        const lower = message.toLowerCase();
+        if (lower.includes("product name") || lower.includes("name")) {
+          nextErrors.name.push(message);
+        } else if (lower.includes("price")) {
+          nextErrors.price.push(message);
+        } else {
+          nextErrors.general.push(message);
+        }
+      });
+
+      setEditErrors(nextErrors);
     }
   };
 
@@ -186,6 +245,15 @@ export default function StoreDetail() {
           <p className="text-sm text-slate-500">
             {store?.location || "Manage products for this store."}
           </p>
+          {pageErrors.length > 0 && (
+            <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <ul className="list-disc space-y-1 pl-5">
+                {pageErrors.map((message, index) => (
+                  <li key={`${message}-${index}`}>{message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <form
@@ -195,34 +263,65 @@ export default function StoreDetail() {
           <h2 className="text-sm font-semibold text-emerald-900">
             Add Product
           </h2>
+          {addErrors.general.length > 0 && (
+            <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <ul className="list-disc space-y-1 pl-5">
+                {addErrors.general.map((message, index) => (
+                  <li key={`${message}-${index}`}>{message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <input
-              name="name"
-              value={newProduct.name}
-              onChange={(e) =>
-                setNewProduct((prev) => ({
-                  ...prev,
-                  name: e.target.value,
-                }))
-              }
-              placeholder="Product name"
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-              required
-            />
-            <input
-              name="price"
-              type="number"
-              value={newProduct.price}
-              onChange={(e) =>
-                setNewProduct((prev) => ({
-                  ...prev,
-                  price: Number(e.target.value),
-                }))
-              }
-              placeholder="Price"
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-              required
-            />
+            <div>
+              <div className="mb-2 h-10 overflow-auto">
+                {addErrors.name.length > 0 && (
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                    {addErrors.name.map((message, index) => (
+                      <li key={`${message}-${index}`}>{message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <input
+                name="name"
+                value={newProduct.name}
+                onChange={(e) =>
+                  setNewProduct((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="Product name"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                required
+              />
+            </div>
+            <div>
+              <div className="mb-2 h-10 overflow-auto">
+                {addErrors.price.length > 0 && (
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                    {addErrors.price.map((message, index) => (
+                      <li key={`${message}-${index}`}>{message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <input
+                name="price"
+                type="number"
+                value={newProduct.price}
+                onChange={(e) =>
+                  setNewProduct((prev) => ({
+                    ...prev,
+                    price: Number(e.target.value),
+                  }))
+                }
+                placeholder="Price"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                required
+              />
+            </div>
             <div className="flex items-center justify-end">
               <button
                 type="submit"
@@ -262,33 +361,62 @@ export default function StoreDetail() {
                 <tr key={product.id} className="bg-white">
                   <td className="px-4 py-3">
                     {editingId === product.id ? (
-                      <input
-                        value={editForm.name || ""}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-md border border-slate-200 px-2 py-1 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                      />
+                      <div>
+                        <div className="mb-2 h-10 overflow-auto">
+                          {editErrors.general.length > 0 && (
+                            <ul className="list-disc space-y-1 pl-5 text-xs text-rose-600">
+                              {editErrors.general.map((message, index) => (
+                                <li key={`${message}-${index}`}>{message}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {editErrors.name.length > 0 && (
+                            <ul className="list-disc space-y-1 pl-5 text-xs text-rose-600">
+                              {editErrors.name.map((message, index) => (
+                                <li key={`${message}-${index}`}>{message}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        <input
+                          value={editForm.name || ""}
+                          onChange={(e) =>
+                            setEditForm((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-md border border-slate-200 px-2 py-1 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        />
+                      </div>
                     ) : (
                       product.name
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {editingId === product.id ? (
-                      <input
-                        type="number"
-                        value={editForm.price ?? 0}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            price: Number(e.target.value),
-                          }))
-                        }
-                        className="w-full rounded-md border border-slate-200 px-2 py-1 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                      />
+                      <div>
+                        <div className="mb-2 h-10 overflow-auto">
+                          {editErrors.price.length > 0 && (
+                            <ul className="list-disc space-y-1 pl-5 text-xs text-rose-600">
+                              {editErrors.price.map((message, index) => (
+                                <li key={`${message}-${index}`}>{message}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        <input
+                          type="number"
+                          value={editForm.price ?? 0}
+                          onChange={(e) =>
+                            setEditForm((prev) => ({
+                              ...prev,
+                              price: Number(e.target.value),
+                            }))
+                          }
+                          className="w-full rounded-md border border-slate-200 px-2 py-1 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        />
+                      </div>
                     ) : (
                       `Rp ${product.price.toLocaleString("id-ID")}`
                     )}

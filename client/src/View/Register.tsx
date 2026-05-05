@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FetchRegister } from "../API/FetchAPI";
-import { ShowSuccess, ShowError } from "../Constant/UIMessage";
+import { ShowSuccess } from "../Constant/UIMessage";
 import { useNavigate } from "react-router";
 
 export default function Register() {
@@ -9,6 +9,12 @@ export default function Register() {
     DisplayName: "",
     email: "",
     password: "",
+  });
+  const [errors, setErrors] = useState({
+    username: [] as string[],
+    email: [] as string[],
+    password: [] as string[],
+    general: [] as string[],
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,6 +28,7 @@ export default function Register() {
   async function HandleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     try {
       e.preventDefault();
+      setErrors({ username: [], email: [], password: [], general: [] });
       const result = await FetchRegister(form);
 
       if (result.status) {
@@ -29,11 +36,32 @@ export default function Register() {
         navigate("/login");
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        ShowError(error.message);
-      } else {
-        ShowError(String(error));
-      }
+      const messages = Array.isArray(error)
+        ? error
+        : error instanceof Error
+          ? [error.message]
+          : [String(error)];
+      const nextErrors = {
+        username: [],
+        email: [],
+        password: [],
+        general: [],
+      } as typeof errors;
+
+      messages.forEach((message) => {
+        const lower = message.toLowerCase();
+        if (lower.includes("username")) {
+          nextErrors.username.push(message);
+        } else if (lower.includes("email")) {
+          nextErrors.email.push(message);
+        } else if (lower.includes("password")) {
+          nextErrors.password.push(message);
+        } else {
+          nextErrors.general.push(message);
+        }
+      });
+
+      setErrors(nextErrors);
     }
   }
 
@@ -60,10 +88,28 @@ export default function Register() {
             method="POST"
             className="mt-8 space-y-5"
           >
+            {errors.general.length > 0 && (
+              <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                <ul className="list-disc space-y-1 pl-5">
+                  {errors.general.map((message, index) => (
+                    <li key={`${message}-${index}`}>{message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-700">
                 Username
               </label>
+              <div className="mt-2 h-10 overflow-auto">
+                {errors.username.length > 0 && (
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                    {errors.username.map((message, index) => (
+                      <li key={`${message}-${index}`}>{message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <div className="mt-2">
                 <input
                   id="DisplayName"
@@ -80,6 +126,15 @@ export default function Register() {
               <label className="block text-sm font-medium text-slate-700">
                 Email address
               </label>
+              <div className="mt-2 h-10 overflow-auto">
+                {errors.email.length > 0 && (
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                    {errors.email.map((message, index) => (
+                      <li key={`${message}-${index}`}>{message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <div className="mt-2">
                 <input
                   id="email"
@@ -97,6 +152,15 @@ export default function Register() {
               <label className="block text-sm font-medium text-slate-700">
                 Password
               </label>
+              <div className="mt-2 h-10 overflow-auto">
+                {errors.password.length > 0 && (
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-rose-600">
+                    {errors.password.map((message, index) => (
+                      <li key={`${message}-${index}`}>{message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <div className="mt-2">
                 <input
                   id="password"

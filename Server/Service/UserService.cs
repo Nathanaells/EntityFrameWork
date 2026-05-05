@@ -46,6 +46,7 @@ public class UserService : IUserService
     {
         if (
             string.IsNullOrWhiteSpace(updateUserDto.Username)
+            && string.IsNullOrWhiteSpace(updateUserDto.Email)
             && string.IsNullOrWhiteSpace(updateUserDto.Password)
         )
         {
@@ -78,6 +79,48 @@ public class UserService : IUserService
         if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
         {
             user.DisplayName = updateUserDto.Username;
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUserDto.Email))
+        {
+            if (!string.Equals(user.Email, updateUserDto.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                User? existingUser = await _userManager.FindByEmailAsync(updateUserDto.Email);
+
+                if (existingUser != null && existingUser.Id != userId)
+                {
+                    return ServiceResult<UserResponseDTO>.ErrorResult(
+                        "Email already in use.",
+                        new List<string> { "A user with this email already exists." }
+                    );
+                }
+
+                IdentityResult emailResult = await _userManager.SetEmailAsync(
+                    user,
+                    updateUserDto.Email
+                );
+
+                if (!emailResult.Succeeded)
+                {
+                    return ServiceResult<UserResponseDTO>.ErrorResult(
+                        "User update failed.",
+                        emailResult.Errors.Select(e => e.Description).ToList()
+                    );
+                }
+
+                IdentityResult usernameResult = await _userManager.SetUserNameAsync(
+                    user,
+                    updateUserDto.Email
+                );
+
+                if (!usernameResult.Succeeded)
+                {
+                    return ServiceResult<UserResponseDTO>.ErrorResult(
+                        "User update failed.",
+                        usernameResult.Errors.Select(e => e.Description).ToList()
+                    );
+                }
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(updateUserDto.Password))

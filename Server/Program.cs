@@ -34,9 +34,7 @@ var jwtSettings = builder.Configuration.GetSection("Jwt");
 
 builder.Services.Configure<JWtOptions>(jwtSettings);
 
-var key = Encoding.ASCII.GetBytes(
-    jwtSettings["Key"] ?? "your-super-secret-key-that-is-at-least-256-bits-long"
-);
+var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
 
 builder
     .Services.AddAuthentication(options =>

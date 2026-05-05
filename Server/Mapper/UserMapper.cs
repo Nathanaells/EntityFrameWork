@@ -1,5 +1,4 @@
 using AutoMapper;
-using Implemented_MVC.DTOs;
 
 namespace Implemented_MVC.Mapper;
 
